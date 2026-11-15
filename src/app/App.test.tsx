@@ -9,6 +9,7 @@ import { PROXY_BASE } from '../player/route';
 import { createSettingsStore, type KeyValueStorage } from '../settings/settings';
 import type { Category, Channel, ChannelDetail, KickApi, Livestream } from '../api/types';
 import pkg from '../../package.json';
+import { createFavouritesStore, type Favourite } from '../favourites/favourites';
 
 function stream(n: number, extra: Partial<Livestream> = {}): Livestream {
   return {
@@ -132,6 +133,7 @@ function mount(api: Partial<KickApi>, tvLanguage = 'en-US') {
     <App
       api={full}
       settings={createSettingsStore(storage)}
+      favourites={createFavouritesStore(storage, () => now)}
       tvLanguage={tvLanguage}
       exit={exit}
       now={() => now}
@@ -982,5 +984,114 @@ describe('Content Filter', () => {
     await until(() => !!root.querySelector('.grid .tile'));
     expect(root.textContent).toContain('Channel 6');
     expect(root.textContent).not.toContain('Channel 5');
+  });
+});
+
+describe('Favourites', () => {
+  function favourite(slug: string, extra: Partial<Favourite> = {}): Favourite {
+    return { slug, name: 'Fav ' + slug, avatarUrl: '', addedAt: 1, watchCount: 0, ...extra };
+  }
+
+  /** Favourites the Viewer added in an earlier session. */
+  function favouritesWere(list: Favourite[]) {
+    storage.setItem('kick.favourites', JSON.stringify(list));
+  }
+
+  function stored(): Favourite[] {
+    return JSON.parse(storage.getItem('kick.favourites') || '[]');
+  }
+
+  function favouriteTiles(): HTMLElement[] {
+    return Array.prototype.slice.call(root.querySelectorAll('.favourite-tile'));
+  }
+
+  function rowTitles() {
+    return Array.prototype.map.call(root.querySelectorAll('.row-title'), (el: HTMLElement) => el.textContent);
+  }
+
+  function toastText() {
+    const el = root.querySelector('.toast');
+    return el ? el.textContent : null;
+  }
+
+  it('yellow on a Top Livestreams tile adds the Favourite, and yellow again removes it', async () => {
+    mount({ topLivestreams: async () => [stream(1), stream(2)] });
+    await until(() => root.querySelectorAll('.tile').length === 2);
+    await until(() => (focusedText() || '').includes('Channel 1'));
+    expect(rowTitles()).toEqual(['Top Livestreams']);
+
+    press('y');
+    await until(() => favouriteTiles().length === 1);
+    expect(toastText()).toBe('Added Channel 1 to Favourites');
+    expect(rowTitles()).toEqual(['Favourites', 'Top Livestreams']);
+    expect(favouriteTiles()[0].textContent).toContain('Channel 1');
+    expect(stored()).toEqual([{ slug: 'chan1', name: 'Channel 1', avatarUrl: '', addedAt: now, watchCount: 0 }]);
+
+    // Focus stays on the Top Livestreams tile, so yellow again removes it.
+    expect(focusedText()).toContain('Title 1');
+    press('y');
+    await until(() => favouriteTiles().length === 0);
+    expect(toastText()).toBe('Removed Channel 1 from Favourites');
+    expect(rowTitles()).toEqual(['Top Livestreams']);
+    expect(stored()).toEqual([]);
+  });
+
+  const liveSlugs = ['a', 'c', 'd'];
+  const liveApi: Partial<KickApi> = {
+    topLivestreams: async () => [stream(1)],
+    channelLivestream: async (slug) =>
+      liveSlugs.indexOf(slug) === -1 ? null : stream(slug.charCodeAt(0), { channelSlug: slug, title: 'Live ' + slug }),
+    channel: async (slug) => channelFor(stream(1, { channelSlug: slug }), slug),
+  };
+
+  function seedFour() {
+    favouritesWere([
+      favourite('a', { watchCount: 1, addedAt: 1 }),
+      favourite('b', { watchCount: 5, addedAt: 1 }),
+      favourite('c', { watchCount: 3, addedAt: 1 }),
+      favourite('d', { watchCount: 3, addedAt: 2 }),
+    ]);
+  }
+
+  it('shows live Favourites first, then offline ones greyed out; each by Watch Count, ties newest first', async () => {
+    seedFour();
+    mount(liveApi);
+    await until(() => favouriteTiles().length === 4 && !!root.querySelector('.favourite-tile.offline'));
+    await until(() => favouriteTiles()[3].classList.contains('offline'));
+
+    expect(rowTitles()[0]).toBe('Favourites');
+    expect(favouriteTiles().map((el) => el.querySelector('.channel-name')!.textContent)).toEqual([
+      'Fav d',
+      'Fav c',
+      'Fav a',
+      'Fav b',
+    ]);
+    expect(favouriteTiles().map((el) => el.classList.contains('offline'))).toEqual([false, false, false, true]);
+    expect(favouriteTiles()[0].textContent).toContain('Live d');
+    expect(favouriteTiles()[3].textContent).toContain('Offline');
+    await until(() => (focusedText() || '').includes('Fav d'));
+  });
+
+  it('OK on an offline Favourite shows "Offline" and does not play it', async () => {
+    seedFour();
+    mount(liveApi);
+    await until(() => favouriteTiles().length === 4 && favouriteTiles()[3].classList.contains('offline'));
+    favouriteTiles()[3].click();
+    await until(() => toastText() !== null);
+    expect(toastText()).toBe('Offline');
+    expect(root.querySelector('.playback')).toBeNull();
+    expect(players).toHaveLength(0);
+  });
+
+  it('OK on a live Favourite plays it and adds 1 to its Watch Count', async () => {
+    seedFour();
+    mount(liveApi);
+    await until(() => favouriteTiles().length === 4 && favouriteTiles()[3].classList.contains('offline'));
+    await until(() => (focusedText() || '').includes('Fav d'));
+    press('Enter');
+    await until(() => players.length === 1 && players[0].opened.length === 1);
+    expect(players[0].opened[0]).toContain(encodeURIComponent('/d.m3u8'));
+    expect(stored().filter((f) => f.slug === 'd')[0].watchCount).toBe(4);
+    expect(stored().filter((f) => f.slug === 'c')[0].watchCount).toBe(3);
   });
 });

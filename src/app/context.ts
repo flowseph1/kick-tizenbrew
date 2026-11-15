@@ -1,6 +1,7 @@
 import { createContext } from 'preact';
 import { useContext, useEffect, useRef } from 'preact/hooks';
 import type { KickApi } from '../api/types';
+import type { Favourite, FavouriteChannel } from '../favourites/favourites';
 import type { Translate } from '../i18n/strings';
 import type { Action } from '../nav/keys';
 import type { FocusManager } from '../nav/focus';
@@ -22,6 +23,13 @@ export interface AppServices {
   settings: Settings;
   /** Changes a setting and saves it on the TV (in memory only if storage fails). */
   setSetting<K extends SettingKey>(key: K, value: Settings[K]): void;
+  /** The Viewer's Favourites, in the order they were added. Screens re-render when they change. */
+  favourites: Favourite[];
+  isFavourite(slug: string): boolean;
+  /** Adds or removes the Favourite and shows a toast that says which. */
+  toggleFavourite(channel: FavouriteChannel): void;
+  /** A Livestream of this Channel starts to play: a Favourite's Watch Count goes up by 1. */
+  recordWatch(slug: string): void;
   /** Opens a screen on top of the current one. */
   push(route: Route): void;
   /** Returns to the previous screen. */

@@ -6,6 +6,7 @@ import type { PlaybackDeps } from './player/deps';
 import { HlsJsPlayer } from './player/hlsjs';
 import { pickEngine, waitForProxy } from './player/pick';
 import { tizenVersion } from './player/route';
+import { createFavouritesStore } from './favourites/favourites';
 import { createSettingsStore } from './settings/settings';
 import { browserStorage } from './storage/storage';
 
@@ -27,6 +28,7 @@ function tvLanguage(): string {
 
 const api = createKickApi((url) => fetch(url));
 const settings = createSettingsStore(browserStorage());
+const favourites = createFavouritesStore(browserStorage());
 
 // AVPlay when the page can reach webapis.avplay, else <video> + hls.js (see the spec, Playback).
 const win = window as unknown as { webapis?: { avplay?: AvPlayApi } };
@@ -48,6 +50,10 @@ const playback: PlaybackDeps = {
 };
 
 render(
-  <App api={api} settings={settings} tvLanguage={tvLanguage()} exit={exitToTizenBrew} playback={playback} />,
+  <App
+    api={api}
+    settings={settings}
+    favourites={favourites}
+    tvLanguage={tvLanguage()} exit={exitToTizenBrew} playback={playback} />,
   document.getElementById('app')!,
 );
