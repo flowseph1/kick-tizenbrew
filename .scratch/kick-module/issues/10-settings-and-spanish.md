@@ -6,7 +6,7 @@ See `.scratch/kick-module/spec.md` (Settings, Languages).
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] `Settings` opens from the top bar; Back returns to Home.
 - [x] Language changes the UI at once and survives a restart.
