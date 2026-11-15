@@ -51,6 +51,8 @@ export interface PlaybackSession {
   quality(): Quality | null;
   /** Applies a Quality (null = Auto) to the current Livestream: in place on hls.js, a reopen on AVPlay. */
   setQuality(quality: Quality | null): void;
+  /** Chat reported the Livestream end (`StopStreamBroadcast`): the same "ended" path as the player end. */
+  livestreamEnded(): void;
 }
 
 export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
@@ -59,6 +61,8 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
   let channel: ChannelDetail | null = null;
   let run = 0;
   let proxyOk = false;
+  /** True after stop(), until the next start(). */
+  let stopped = false;
   /** The chosen Quality; null is Auto. */
   let chosen: Quality | null = null;
   let endedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -167,6 +171,7 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
   return {
     start() {
       const id = ++run;
+      stopped = false;
       clearTimers();
       closePlayer();
       chosen = null;
@@ -190,6 +195,7 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
       else this.pause();
     },
     stop() {
+      stopped = true;
       run++;
       clearTimers();
       closePlayer();
@@ -204,6 +210,11 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
       return parseQualities(await opts.fetchText(masterTextUrl(ch.playbackUrl)));
     },
     quality: () => chosen,
+    livestreamEnded() {
+      if (stopped || status === 'ended' || status === 'error') return;
+      run++;
+      ended();
+    },
     setQuality(quality) {
       const p = current;
       if (!p || status === 'ended' || status === 'error') return;

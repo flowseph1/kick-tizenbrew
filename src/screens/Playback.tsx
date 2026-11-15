@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useApp, useScreenActions } from '../app/context';
+import { ChatOverlay, useChat } from '../components/ChatOverlay';
 import { ErrorScreen } from '../components/ErrorScreen';
 import { InfoBar, type InfoBarButton } from '../components/InfoBar';
 import type { Quality } from '../player/quality';
@@ -16,8 +17,8 @@ type Overlay = 'none' | 'bar' | 'quality';
 
 /**
  * Full screen playback of one Channel's Livestream. OK shows the Info Bar (`session.channel()`);
- * its Quality list applies a Quality with `session.setQuality()`. Ticket 07 adds the Chat Overlay
- * (`session.channel().chatroomId`).
+ * its Quality list applies a Quality with `session.setQuality()`. The green key or the Chat button
+ * shows the Chat Overlay (`useChat`).
  */
 export function Playback({ slug }: { slug: string }) {
   const app = useApp();
@@ -73,6 +74,13 @@ export function Playback({ slug }: { slug: string }) {
     return () => root.classList.remove(PLAYING_CLASS);
   }, [showVideo]);
 
+  const chat = useChat({
+    channel: () => session.channel(),
+    createSocket: app.playback.createSocket,
+    active: showVideo,
+    onLivestreamEnded: () => session.livestreamEnded(),
+  });
+
   function showInfoBar(): boolean {
     const ch = session.channel();
     if (!showVideo || !ch || !ch.livestream) return false;
@@ -109,8 +117,10 @@ export function Playback({ slug }: { slug: string }) {
   // Ticket 06: add or remove the Favourite (session.channel() has slug, name and avatarUrl).
   function onFavourite() {}
 
-  // Ticket 07: show or hide the Chat Overlay (the green key does the same).
-  function onChat() {}
+  // Show or hide the Chat Overlay (the green key does the same).
+  function onChat() {
+    chat.toggle();
+  }
 
   useScreenActions((action) => {
     // Any key while the Info Bar shows keeps it up for another 5 s.
@@ -128,9 +138,13 @@ export function Playback({ slug }: { slug: string }) {
       case 'ok':
         // With the Info Bar up, OK presses the focused button (the App default).
         return overlayRef.current === 'none' ? showInfoBar() : false;
+      case 'green':
+        onChat();
+        return true;
       case 'back':
         if (overlayRef.current === 'quality') closeQualityList();
         else if (overlayRef.current === 'bar') setOverlay('none');
+        else if (chat.isOpen()) chat.close();
         else app.back();
         return true;
       case 'stop':
@@ -153,12 +167,14 @@ export function Playback({ slug }: { slug: string }) {
   return (
     <div class={'playback playback-' + state.status}>
       {message ? <div class="playback-message">{message}</div> : null}
+      {chat.open && showVideo ? <ChatOverlay messages={chat.messages} /> : null}
       {overlay !== 'none' && channel ? (
         <InfoBar
           channel={channel}
           focusOn={focusOn}
           onFavourite={onFavourite}
           onChat={onChat}
+          chatOpen={chat.open}
           onQuality={openQualityList}
           quality={
             overlay === 'quality'

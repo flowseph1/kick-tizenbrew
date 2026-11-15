@@ -1,5 +1,6 @@
 import { render } from 'preact';
 import { createKickApi } from './api/kick';
+import type { ChatSocket } from './chat/connection';
 import { App } from './app/App';
 import { AvPlayPlayer, type AvPlayApi } from './player/avplay';
 import type { PlaybackDeps } from './player/deps';
@@ -45,6 +46,7 @@ const playback: PlaybackDeps = {
       if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + url);
       return r.text();
     }),
+  createSocket: (url) => new WebSocket(url) as unknown as ChatSocket,
 };
 
 render(

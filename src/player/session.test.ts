@@ -149,6 +149,31 @@ describe('PlaybackSession', () => {
     expect(done).toHaveBeenCalledTimes(1);
   });
 
+  it('shows "ended" for 5 s and then finishes when chat reports the Livestream end; only once', async () => {
+    const session = setup(async () => channel(true));
+    session.start();
+    await vi.advanceTimersByTimeAsync(0);
+    player.emit({ type: 'playing' });
+    session.livestreamEnded();
+    session.livestreamEnded();
+
+    expect(states.filter((s) => s.status === 'ended')).toHaveLength(1);
+    expect(player.closed).toBe(true);
+    await vi.advanceTimersByTimeAsync(ENDED_MS);
+    expect(done).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a Livestream end from chat after leaving playback', async () => {
+    const session = setup(async () => channel(true));
+    session.start();
+    await vi.advanceTimersByTimeAsync(0);
+    session.stop();
+    session.livestreamEnded();
+    await vi.advanceTimersByTimeAsync(ENDED_MS);
+    expect(states.filter((s) => s.status === 'ended')).toHaveLength(0);
+    expect(done).not.toHaveBeenCalled();
+  });
+
   it('reconnects after a network error with a fresh playback token', async () => {
     let token = 0;
     const session = setup(async () => channel(true, 'tok' + ++token));
