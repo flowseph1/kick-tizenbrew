@@ -35,7 +35,9 @@ If not, fall back to approach b: an `app` module with our own UI.
 
 Analysis: tizen.kick.com is a Next.js app ("console" build on assets.kick.com). 36 of its 42 JS chunks use optional chaining (`?.`) and nullish coalescing (`??`), which need Chromium 80+. On Chromium 69 (Tizen 5.5) or 76 (Tizen 6.0) these chunks fail to parse. The page then shows only its server rendered HTML, with no client logic. This matches run 1.
 
-Probe v2: pins the Chromium version and the TV model at the top of the panel. It runs at document start, to catch early script errors.
+Probe v2: pins the Chromium version and the TV model at the top of the panel.
+
+Do not set `evaluateScriptOnDocumentStart`: TizenBrew does not navigate on a manual launch when it is true (the UI waits for a LaunchModule event that the service sends with `name`, but the UI matches on `fullName`). The module tile does nothing.
 
 ### Outcome
 
