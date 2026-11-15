@@ -1,0 +1,77 @@
+{
+  "id": 78665731,
+  "user_id": 79849296,
+  "slug": "degengambaslots",
+  "is_banned": false,
+  "playback_url": "https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/us-west-2.196233775518.channel.KIodib9eCt2t.m3u8?token=REDACTED",
+  "vod_enabled": true,
+  "subscription_enabled": true,
+  "is_affiliate": true,
+  "followers_count": 42068,
+  "subscriber_badges": [],
+  "banner_image": {
+    "url": "https://files.kick.com/images/channel/78665731/banner_image/d3467665-a3f4-4096-b4d7-3ae65b10aaae"
+  },
+  "livestream": null,
+  "role": null,
+  "muted": false,
+  "follower_badges": [],
+  "offline_banner_image": null,
+  "verified": false,
+  "recent_categories": [
+    {
+      "id": 28,
+      "category_id": 4,
+      "name": "Slots & Casino",
+      "slug": "slots",
+      "tags": [
+        "Gambling"
+      ],
+      "description": null,
+      "deleted_at": null,
+      "is_mature": true,
+      "viewers": 61427,
+      "is_fallback": false,
+      "banner": {
+        "responsive": "https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_408_408.webp 408w, https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_341_341.webp 341w, https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_285_285.webp 285w, https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_238_238.webp 238w, https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_199_199.webp 199w",
+        "url": "https://files.kick.com/images/subcategories/28/banner/f9233069-cfa7-4ae1-9b33-f2b9ca652fef"
+      },
+      "category": {
+        "id": 4,
+        "name": "Gambling",
+        "slug": "gambling",
+        "icon": "🎰"
+      }
+    }
+  ],
+  "can_host": true,
+  "user": {
+    "id": 79849296,
+    "username": "DegenGambaSlots",
+    "bio": "",
+    "instagram": "gamblingprime",
+    "twitter": "degengambaslots",
+    "youtube": "",
+    "discord": "mahakaal",
+    "tiktok": "",
+    "facebook": "",
+    "club": null,
+    "profile_pic": "https://files.kick.com/images/user/79849296/profile_image/conversion/2fefabc8-59fd-4ce3-a373-d591f5d62840-fullsize.webp"
+  },
+  "chatroom": {
+    "id": 78376815,
+    "chatable_type": "App\\Models\\Channel",
+    "channel_id": 78665731,
+    "created_at": "2025-09-26T20:23:04.000000Z",
+    "updated_at": "2025-10-12T16:12:37.000000Z",
+    "chat_mode_old": "public",
+    "chat_mode": "public",
+    "slow_mode": false,
+    "chatable_id": 78665731,
+    "followers_mode": false,
+    "subscribers_mode": false,
+    "emotes_mode": false,
+    "message_interval": 5,
+    "following_min_duration": 0
+  }
+}

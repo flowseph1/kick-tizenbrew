@@ -26,6 +26,23 @@ export interface Livestream {
   category: Category | null;
 }
 
+/** A Channel as Kick search returns it: no Livestream title or viewers, only whether it is live. */
+export interface Channel {
+  id: number;
+  slug: string;
+  name: string;
+  /** Empty when the Channel has no picture. */
+  avatarUrl: string;
+  isLive: boolean;
+  followerCount: number;
+}
+
+export interface SearchResults {
+  channels: Channel[];
+  /** Unfiltered: the Content Filter (ticket 11) reads `isMature`, `parentSlug` and `tags`. */
+  categories: Category[];
+}
+
 /** Everything the Module reads from Kick. Later tickets add methods here. */
 export interface KickApi {
   topLivestreams(): Promise<Livestream[]>;
@@ -33,4 +50,8 @@ export interface KickApi {
   topCategories(): Promise<Category[]>;
   /** The Livestreams in one Category (by slug), most viewers first. */
   categoryLivestreams(slug: string): Promise<Livestream[]>;
+  /** Channels and Categories that match a searched word. */
+  search(word: string): Promise<SearchResults>;
+  /** The Livestream a Channel airs now, or null when it is offline. */
+  channelLivestream(slug: string): Promise<Livestream | null>;
 }

@@ -1,6 +1,6 @@
 // The one adapter between the unofficial kick.com API and our own types.
 // Endpoints are recorded in `.scratch/kick-module/spec.md` (Data source).
-import type { Category, KickApi, Livestream } from './types';
+import type { Category, Channel, KickApi, Livestream } from './types';
 
 export const KICK_BASE = 'https://kick.com';
 const TOP_LIMIT = 24;
@@ -68,6 +68,43 @@ export function mapStreamListItem(raw: Json): Livestream {
   };
 }
 
+/** Maps one item of `channels` in `GET /api/search`. Search uses camelCase `isLive` and `profilePic`. */
+export function mapSearchChannel(raw: Json): Channel {
+  const user = raw.user || {};
+  return {
+    id: num(raw.id),
+    slug: str(raw.slug),
+    name: str(user.username) || str(raw.slug),
+    avatarUrl: str(user.profilePic),
+    isLive: raw.isLive === true,
+    followerCount: num(raw.followers_count),
+  };
+}
+
+/** Maps `livestream` of `GET /api/v2/channels/{slug}`, or null when the Channel is offline. */
+export function mapChannelLivestream(raw: Json): Livestream | null {
+  const ls = raw.livestream;
+  if (!ls || typeof ls !== 'object') return null;
+  const user = raw.user || {};
+  const thumb = ls.thumbnail || {};
+  const categories = Array.isArray(ls.categories) ? ls.categories : [];
+  return {
+    id: num(ls.id),
+    channelSlug: str(raw.slug),
+    channelName: str(user.username) || str(raw.slug),
+    channelAvatarUrl: str(user.profile_pic),
+    title: str(ls.session_title),
+    viewerCount: num(ls.viewer_count),
+    isMature: ls.is_mature === true,
+    thumbnailUrl: str(thumb.url) || str(thumb.src),
+    category: mapCategory(categories[0]),
+  };
+}
+
+function list(v: unknown): Json[] {
+  return Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : [];
+}
+
 export function createKickApi(fetchFn: FetchLike, base: string = KICK_BASE): KickApi {
   async function getJson(path: string): Promise<Json> {
     let res;
@@ -101,6 +138,19 @@ export function createKickApi(fetchFn: FetchLike, base: string = KICK_BASE): Kic
     },
     categoryLivestreams(slug) {
       return streamList('limit=' + CATEGORY_LIMIT + '&sort=desc&page=1&subcategory=' + encodeURIComponent(slug));
+    },
+    async search(word) {
+      // `livestreams` in the answer is always `{tags: []}`; ignore it.
+      const body = await getJson('/api/search?searched_word=' + encodeURIComponent(word));
+      return {
+        channels: list(body && body.channels).map(mapSearchChannel),
+        categories: list(body && body.categories)
+          .map(mapCategory)
+          .filter((c): c is Category => c !== null),
+      };
+    },
+    async channelLivestream(slug) {
+      return mapChannelLivestream(await getJson('/api/v2/channels/' + encodeURIComponent(slug)));
     },
   };
 }
