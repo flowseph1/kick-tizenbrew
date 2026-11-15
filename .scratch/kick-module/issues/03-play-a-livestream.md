@@ -12,7 +12,7 @@ See `.scratch/kick-module/spec.md` (Playback, Playback screen, Errors).
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] OK on a Top Livestreams tile plays the Livestream full screen on the test TV (UN58RU7100, Tizen 5.0).
 - [x] The same flow plays in desktop Chrome through the dev player.
