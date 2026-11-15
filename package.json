@@ -5,6 +5,7 @@
   "description": "Watch Kick on Samsung Tizen TVs through TizenBrew. Not affiliated with Kick.",
   "packageType": "app",
   "appPath": "dist/index.html",
+  "serviceFile": "dist/service.js",
   "keys": [
     "ColorF0Red",
     "ColorF1Green",
@@ -26,6 +27,7 @@
     "dev": "node scripts/dev.mjs"
   },
   "dependencies": {
+    "hls.js": "1.7.4",
     "preact": "10.29.8"
   },
   "devDependencies": {
