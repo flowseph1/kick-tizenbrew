@@ -1,11 +1,10 @@
 {
   "name": "kick-tizenbrew",
   "appName": "Kick",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Watch Kick on Samsung Tizen TVs through TizenBrew. Not affiliated with Kick.",
-  "packageType": "mods",
-  "websiteURL": "https://tizen.kick.com",
-  "main": "spike/probe.js",
+  "packageType": "app",
+  "appPath": "dist/index.html",
   "keys": [
     "ColorF0Red",
     "ColorF1Green",
@@ -16,5 +15,24 @@
     "MediaPause",
     "MediaStop"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs && node scripts/check-syntax.mjs",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "dev": "node scripts/dev.mjs"
+  },
+  "dependencies": {
+    "preact": "10.29.8"
+  },
+  "devDependencies": {
+    "es-check": "9.9.0",
+    "esbuild": "0.28.2",
+    "happy-dom": "21.0.4",
+    "typescript": "5.9.3",
+    "vitest": "5.1.0"
+  }
 }

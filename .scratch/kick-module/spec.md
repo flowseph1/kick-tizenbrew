@@ -33,7 +33,7 @@ Unofficial `https://kick.com/api` endpoints, called directly from the module (Ki
 | Need | Endpoint (verify during implementation) |
 |---|---|
 | Channel, Livestream, playback URL, chatroom id | `GET /api/v2/channels/{slug}` |
-| Top Livestreams | find the endpoint kick.com uses (for example `/stream/livestreams/{lang}` or `/api/v1/...`) |
+| Top Livestreams | `GET https://kick.com/stream/livestreams/en?limit=24&sort=desc&page=1` (verified, CORS reflects our Origin). `sort=desc` orders by viewers; without it the order is newest first. `limit` max 32. The `/{lang}` segment is ignored (all languages). Laravel paginator: items in `data[]`. List items carry a tokenless `playback_url` that returns 403: fetch the Channel for playback. |
 | Top Categories | `GET /api/v1/categories/top` or `/api/v1/subcategories` |
 | Livestreams in a Category | find the endpoint kick.com uses |
 | Search | `GET /api/search?searched_word=...` |
@@ -135,5 +135,5 @@ All UI text comes from one string table with `en` and `es`. "Auto" uses the TV l
 
 ## Open items
 
-- Exact endpoints for Top Livestreams and Category Livestreams.
+- Exact endpoint for Category Livestreams (Top Livestreams is recorded in Data source).
 - Whether AVPlay can switch Quality in place, or must reopen the stream.
