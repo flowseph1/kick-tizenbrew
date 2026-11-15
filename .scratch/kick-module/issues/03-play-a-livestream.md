@@ -49,3 +49,4 @@ Not verified, needs the test TV (UN58RU7100, Tizen 5.0), so this box stays unche
 - 07 (Chat): `PlaybackSession.channel().chatroomId` (Pusher `chatrooms.{id}.v2`) and `.id` (channel id, for `channel.{id}` and `StopStreamBroadcast`, which could call into the session's end handling). Close the websocket in the Playback screen cleanup next to `session.stop()`. Back is handled in `Playback.tsx` (`useScreenActions`): close the overlay there first.
 - 06 (Watch Count): count when the session status first becomes `playing` (`onState`).
 - Strings added: `playback.paused`, `playback.reconnecting`, `playback.ended`.
+- Merged into kick-module-v1; TV verification pending.
