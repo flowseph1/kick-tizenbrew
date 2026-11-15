@@ -6,7 +6,7 @@ See `.scratch/kick-module/spec.md` (Content Filter) and `GLOSSARY.md`.
 
 **Blocked by:** 08, 09, 10
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] The Content Filter switch shows in Settings, off by default, and survives a restart.
 - [x] When on, gambling Categories and mature Livestreams are hidden in all listed places.
