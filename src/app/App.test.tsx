@@ -548,3 +548,27 @@ describe('Search', () => {
     expect(root.textContent).not.toContain('Top Livestreams');
   });
 });
+
+describe('Content Filter', () => {
+  async function openSettings() {
+    await until(() => root.querySelectorAll('.tile').length >= 1);
+    button('Settings').click();
+    await until(() => !!root.querySelector('.settings'));
+  }
+
+  it('shows a switch in Settings, off by default, that stays on after a restart', async () => {
+    const api = { topLivestreams: async () => [stream(1)] };
+    mount(api);
+    await openSettings();
+    expect(root.textContent).toContain('Content Filter');
+    expect(button('Off').getAttribute('aria-pressed')).toBe('true');
+    expect(button('On').getAttribute('aria-pressed')).toBe('false');
+
+    button('On').click();
+    await until(() => button('On').getAttribute('aria-pressed') === 'true');
+
+    restart(api);
+    await openSettings();
+    expect(button('On').getAttribute('aria-pressed')).toBe('true');
+  });
+});
