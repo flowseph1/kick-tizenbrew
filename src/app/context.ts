@@ -23,9 +23,6 @@ export interface AppServices {
   settings: Settings;
   /** Changes a setting and saves it on the TV (in memory only if storage fails). */
   setSetting<K extends SettingKey>(key: K, value: Settings[K]): void;
-  /** The Viewer's Favourites, in the order they were added. Screens re-render when they change. */
-  favourites: Favourite[];
-  isFavourite(slug: string): boolean;
   /** Adds or removes the Favourite and shows a toast that says which. */
   toggleFavourite(channel: FavouriteChannel): void;
   /** A Livestream of this Channel starts to play: a Favourite's Watch Count goes up by 1. */
@@ -43,6 +40,18 @@ export interface AppServices {
 }
 
 export const AppContext = createContext<AppServices | null>(null);
+
+/**
+ * The Viewer's Favourites, in the order they were added. A context of its own so a change
+ * re-renders only the components that read it, and `useApp()` stays the same object
+ * (the Playback session must not restart when the Viewer adds a Favourite).
+ */
+export const FavouritesContext = createContext<Favourite[]>([]);
+
+export function useFavourites(): { list: Favourite[]; has(slug: string): boolean } {
+  const list = useContext(FavouritesContext);
+  return { list, has: (slug) => list.some((f) => f.slug === slug) };
+}
 
 export function useApp(): AppServices {
   const app = useContext(AppContext);

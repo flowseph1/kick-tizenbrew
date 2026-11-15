@@ -1,5 +1,5 @@
 import type { Livestream } from '../api/types';
-import { useApp } from '../app/context';
+import { useApp, useFavourites } from '../app/context';
 import { favouriteTarget } from '../favourites/target';
 
 export function formatCount(n: number): string {
@@ -16,7 +16,8 @@ export function LivestreamTile({
   /** Focus this tile first when the screen opens (the top bar sits above it). */
   autofocus?: boolean;
 }) {
-  const { t, isFavourite } = useApp();
+  const { t } = useApp();
+  const isFavourite = useFavourites().has;
   const target = { slug: livestream.channelSlug, name: livestream.channelName, avatarUrl: livestream.channelAvatarUrl };
   return (
     <div

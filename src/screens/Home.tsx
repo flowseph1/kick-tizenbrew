@@ -1,5 +1,5 @@
 import { useMemo } from 'preact/hooks';
-import { useApp, useScreenActions } from '../app/context';
+import { useApp, useFavourites, useScreenActions } from '../app/context';
 import { useOpenLivestream } from '../app/openLivestream';
 import { useAsync } from '../app/useAsync';
 import { CategoryTile } from '../components/CategoryTile';
@@ -19,7 +19,8 @@ export function Home() {
   const [top, reloadTop] = useAsync(() => api.topLivestreams());
   const [categories, reloadCategories] = useAsync(() => api.topCategories());
   const guard = useMemo(() => createExitGuard(app.now), [app]);
-  const { live, ready: liveReady } = useFavouritesLive(app.favourites);
+  const stored = useFavourites().list;
+  const { live, ready: liveReady } = useFavouritesLive(stored);
 
   useScreenActions((action) => {
     if (action !== 'back') {
@@ -46,7 +47,7 @@ export function Home() {
   const livestreams = top.status === 'ready' ? visibleLivestreams(top.value, filterOn) : [];
   const shownCategories = categories.status === 'ready' ? visibleCategories(categories.value, filterOn) : [];
   // Never filtered by the Content Filter.
-  const favourites = orderFavourites(app.favourites, (slug) => !!live[slug]);
+  const favourites = orderFavourites(stored, (slug) => !!live[slug]);
   const hasFavourites = favourites.length > 0;
 
   function openFavourite(slug: string) {

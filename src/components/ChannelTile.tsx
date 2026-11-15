@@ -1,11 +1,12 @@
 import type { Channel } from '../api/types';
-import { useApp } from '../app/context';
+import { useApp, useFavourites } from '../app/context';
 import { favouriteTarget } from '../favourites/target';
 import { formatCount } from './LivestreamTile';
 
 /** A Channel from Search: picture, name, Live or Offline, followers. Offline Channels are greyed out. */
 export function ChannelTile({ channel, onSelect }: { channel: Channel; onSelect?: () => void }) {
-  const { t, isFavourite } = useApp();
+  const { t } = useApp();
+  const isFavourite = useFavourites().has;
   return (
     <div
       class={'channel-tile' + (channel.isLive ? '' : ' offline') + (isFavourite(channel.slug) ? ' is-favourite' : '')}

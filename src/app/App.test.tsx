@@ -1005,6 +1005,17 @@ describe('Favourites', () => {
     return Array.prototype.slice.call(root.querySelectorAll('.favourite-tile'));
   }
 
+  /** From Home: opens Search, types the word and waits for the Channel results. */
+  async function searchFor(word: string) {
+    button('Search').click();
+    await until(() => !!root.querySelector('input'));
+    const input = root.querySelector('input') as HTMLInputElement;
+    input.value = word;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 450)); // the 400 ms search delay
+    await until(() => !!root.querySelector('.search .channel-tile'));
+  }
+
   function rowTitles() {
     return Array.prototype.map.call(root.querySelectorAll('.row-title'), (el: HTMLElement) => el.textContent);
   }
@@ -1093,5 +1104,127 @@ describe('Favourites', () => {
     expect(players[0].opened[0]).toContain(encodeURIComponent('/d.m3u8'));
     expect(stored().filter((f) => f.slug === 'd')[0].watchCount).toBe(4);
     expect(stored().filter((f) => f.slug === 'c')[0].watchCount).toBe(3);
+  });
+
+  it('counts a watch of a Favourite started from Top Livestreams, a Category and Search, and none for others', async () => {
+    favouritesWere([favourite('chan1', { name: 'Channel 1', watchCount: 2 })]);
+    mount({
+      topLivestreams: async () => [stream(1), stream(2)],
+      topCategories: async () => [category('chess')],
+      categoryLivestreams: async () => [stream(1)],
+      search: async () => ({
+        channels: [{ id: 1, slug: 'chan1', name: 'Channel 1', avatarUrl: '', isLive: true, followerCount: 1 }],
+        categories: [],
+      }),
+      channelLivestream: async (slug) => stream(1, { channelSlug: slug }),
+      channel: async (slug) => channelFor(stream(1), slug),
+    });
+    async function playThenBack(start: () => void) {
+      const before = players.length;
+      start();
+      await until(() => players.length === before + 1);
+      press('Escape');
+      await until(() => !root.querySelector('.playback'));
+    }
+
+    await until(() => root.querySelectorAll('.tile').length === 2 && favouriteTiles().length === 1);
+    await playThenBack(() => (root.querySelectorAll('.tile')[0] as HTMLElement).click());
+    expect(stored()[0].watchCount).toBe(3);
+    await until(() => root.querySelectorAll('.tile').length === 2);
+    await playThenBack(() => (root.querySelectorAll('.tile')[1] as HTMLElement).click());
+    expect(stored()[0].watchCount).toBe(3);
+
+    await until(() => !!root.querySelector('.category-tile'));
+    (root.querySelector('.category-tile') as HTMLElement).click();
+    await until(() => !!root.querySelector('.grid .tile'));
+    await playThenBack(() => (root.querySelector('.grid .tile') as HTMLElement).click());
+    expect(stored()[0].watchCount).toBe(4);
+
+    press('Escape');
+    await until(() => !!root.querySelector('.home'));
+    await searchFor('chan');
+    await playThenBack(() => (root.querySelector('.search .channel-tile') as HTMLElement).click());
+    expect(stored()[0].watchCount).toBe(5);
+  });
+
+  it('yellow on a Category screen tile or a Search Channel tile adds the Favourite', async () => {
+    mount({
+      topLivestreams: async () => [stream(1)],
+      topCategories: async () => [category('chess')],
+      categoryLivestreams: async () => [stream(7)],
+      search: async () => ({
+        channels: [{ id: 9, slug: 'xqc', name: 'xQc', avatarUrl: 'https://files.kick.com/xqc.webp', isLive: false, followerCount: 1 }],
+        categories: [],
+      }),
+    });
+    await until(() => !!root.querySelector('.category-tile'));
+    (root.querySelector('.category-tile') as HTMLElement).click();
+    await until(() => (focusedText() || '').includes('Channel 7'));
+    press('y');
+    await until(() => stored().length === 1);
+    expect(stored()[0].slug).toBe('chan7');
+    expect(root.querySelector('.grid .tile')!.classList.contains('is-favourite')).toBe(true);
+
+    press('Escape');
+    await until(() => !!root.querySelector('.home'));
+    await searchFor('xqc');
+    press('ArrowDown');
+    await until(() => (focusedText() || '').includes('xQc'));
+    press('y');
+    await until(() => stored().length === 2);
+    expect(stored()[1]).toEqual({ slug: 'xqc', name: 'xQc', avatarUrl: 'https://files.kick.com/xqc.webp', addedAt: now, watchCount: 0 });
+    expect(toastText()).toBe('Added xQc to Favourites');
+  });
+
+  async function playing(api: Partial<KickApi> = {}) {
+    mount({
+      topLivestreams: async () => [stream(1)],
+      channel: async (slug) => ({ ...channelFor(stream(1), slug), avatarUrl: 'https://files.kick.com/c1.webp' }),
+      ...api,
+    });
+    await until(() => root.querySelectorAll('.tile').length === 1);
+    await until(() => focusedText() !== null);
+    press('Enter');
+    await until(() => players.length === 1 && players[0].opened.length === 1);
+    players[0].emit({ type: 'playing' });
+  }
+
+  it('yellow during playback adds and removes the Favourite of the Channel playing', async () => {
+    await playing();
+    press('y');
+    await until(() => stored().length === 1);
+    expect(stored()[0]).toEqual({
+      slug: 'chan1',
+      name: 'Channel 1',
+      avatarUrl: 'https://files.kick.com/c1.webp',
+      addedAt: now,
+      watchCount: 0,
+    });
+    expect(toastText()).toBe('Added Channel 1 to Favourites');
+    expect(root.querySelector('.playback')).not.toBeNull();
+
+    press('y');
+    await until(() => stored().length === 0);
+    expect(toastText()).toBe('Removed Channel 1 from Favourites');
+    // The Livestream keeps playing: no new player, no reload.
+    expect(players).toHaveLength(1);
+    expect(players[0].closed).toBe(false);
+    expect(players[0].opened).toHaveLength(1);
+  });
+
+  it('the Info Bar Favourite button adds and removes the Favourite and shows which', async () => {
+    await playing();
+    press('Enter');
+    await until(() => focusedText() === 'Favourite');
+    expect(button('Favourite').getAttribute('aria-pressed')).toBe('false');
+
+    press('Enter');
+    await until(() => stored().length === 1);
+    expect(button('Favourite').getAttribute('aria-pressed')).toBe('true');
+    expect(toastText()).toBe('Added Channel 1 to Favourites');
+
+    press('Enter');
+    await until(() => stored().length === 0);
+    expect(button('Favourite').getAttribute('aria-pressed')).toBe('false');
   });
 });

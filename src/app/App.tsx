@@ -7,7 +7,7 @@ import type { Favourite, FavouritesStore } from '../favourites/favourites';
 import { readFavouriteTarget } from '../favourites/target';
 import { FocusManager } from '../nav/focus';
 import { isDirection, toAction } from '../nav/keys';
-import { AppContext, type ActionHandler, type AppServices } from './context';
+import { AppContext, FavouritesContext, type ActionHandler, type AppServices } from './context';
 import type { Route } from './routes';
 import { renderScreen } from './screens';
 
@@ -74,8 +74,6 @@ export function App({ api, settings: store, favourites: favouritesStore, tvLangu
       playback,
       settings,
       setSetting: (key, value) => store.set(key, value),
-      favourites,
-      isFavourite: (slug) => favouritesStore.has(slug),
       toggleFavourite: (channel) => {
         const added = favouritesStore.toggle(channel);
         toast(t(added ? 'favourites.added' : 'favourites.removed', { name: channel.name }));
@@ -90,7 +88,7 @@ export function App({ api, settings: store, favourites: favouritesStore, tvLangu
       exit: () => exitRef.current(),
       toast,
     };
-  }, [api, t, now, settings, store, favourites, favouritesStore, playback]);
+  }, [api, t, now, settings, store, favouritesStore, playback]);
 
   // Keep focus valid whenever the screen content changes (loading, error, data).
   useEffect(() => {
@@ -130,10 +128,12 @@ export function App({ api, settings: store, favourites: favouritesStore, tvLangu
   const route = stack[stack.length - 1];
   return (
     <AppContext.Provider value={services}>
-      <div class="screen" ref={screenRef}>
-        {renderScreen(route)}
-      </div>
-      {toast ? <div class="toast">{toast}</div> : null}
+      <FavouritesContext.Provider value={favourites}>
+        <div class="screen" ref={screenRef}>
+          {renderScreen(route)}
+        </div>
+        {toast ? <div class="toast">{toast}</div> : null}
+      </FavouritesContext.Provider>
     </AppContext.Provider>
   );
 }
