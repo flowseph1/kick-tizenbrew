@@ -8,7 +8,7 @@ See `.scratch/kick-module/spec.md` (Playback, Playback screen).
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] OK during playback shows the Info Bar with correct data; it hides after 5 s with no key press.
 - [x] The three buttons take focus with arrows.
