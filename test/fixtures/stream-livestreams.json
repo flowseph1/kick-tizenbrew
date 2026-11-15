@@ -1,0 +1,223 @@
+{
+  "current_page": 1,
+  "data": [
+    {
+      "id": 137906841,
+      "slug": "96126d98dc2e1f1d-wow-forever-new-player-with-greyble-and-plubell-donatetts",
+      "channel_id": 5247465,
+      "created_at": "2026-11-15 00:59:29",
+      "session_title": "WOW FOREVER NEW PLAYER! | with Greyble and Plubell | !donate\\!tts",
+      "is_live": true,
+      "risk_level_id": null,
+      "start_time": "2026-11-15 00:59:24",
+      "source": null,
+      "twitch_channel": null,
+      "duration": 0,
+      "language": "English",
+      "is_mature": false,
+      "viewer_count": 0,
+      "order": null,
+      "tags": [],
+      "thumbnail": {
+        "srcset": "https://images.kick.com/video_thumbnails/urDGN08wH7xv/bH17JkJMU4G1/1080.webp?versionId=6TURDFI3KotFMuhV7yG67IC4txQydCAr 1920w, https://images.kick.com/video_thumbnails/urDGN08wH7xv/bH17JkJMU4G1/720.webp?versionId=.HBPV0fekvljLVUXFP3FM_OorC9em39O 1280w, https://images.kick.com/video_thumbnails/urDGN08wH7xv/bH17JkJMU4G1/360.webp?versionId=POukyFet.L2BV8AXLLr.U6cEP0vjP27D 480w, https://images.kick.com/video_thumbnails/urDGN08wH7xv/bH17JkJMU4G1/160.webp?versionId=bIu6Keh_hpSRSRIcsJVF07XSOTutw6xy 284w, https://images.kick.com/video_thumbnails/urDGN08wH7xv/bH17JkJMU4G1/480.webp?versionId=yfvYwCeMexF6Y2GHcvec69vLAGSRktlo 640w",
+        "src": "https://images.kick.com/video_thumbnails/urDGN08wH7xv/bH17JkJMU4G1/720.webp?versionId=.HBPV0fekvljLVUXFP3FM_OorC9em39O"
+      },
+      "viewers": 0,
+      "show_view_count": true,
+      "channel": {
+        "id": 5247465,
+        "user_id": 5338549,
+        "slug": "greyble",
+        "is_banned": false,
+        "playback_url": "https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/us-west-2.196233775518.channel.urDGN08wH7xv.m3u8",
+        "name_updated_at": null,
+        "vod_enabled": true,
+        "subscription_enabled": true,
+        "is_affiliate": false,
+        "can_host": true,
+        "user": {
+          "id": 5338549,
+          "username": "Greyble",
+          "agreed_to_terms": true,
+          "country": "",
+          "state": "",
+          "city": "",
+          "gender": null,
+          "club": null,
+          "profilepic": "https://files.kick.com/images/user/5338549/profile_image/conversion/d79a8cfb-fa27-4615-97d6-1597535b2a4b-thumb.webp"
+        }
+      },
+      "categories": [
+        {
+          "id": 14374,
+          "category_id": 1,
+          "name": "World of Warcraft: Forever",
+          "slug": "world-of-warcraft-forever",
+          "tags": [
+            "Action",
+            "Open World",
+            "Warfare",
+            "Fantasy"
+          ],
+          "description": null,
+          "deleted_at": null,
+          "is_mature": false,
+          "viewers": 14726,
+          "is_fallback": false,
+          "category": {
+            "id": 1,
+            "name": "Games",
+            "slug": "games",
+            "icon": "🕹️"
+          }
+        }
+      ]
+    },
+    {
+      "id": 137906541,
+      "slug": "47d4240cc8dffe07-short-stream-to-say-hi-and-thank-you",
+      "channel_id": 115583301,
+      "created_at": "2026-11-15 00:57:46",
+      "session_title": "Short stream to say hi and thank you",
+      "is_live": true,
+      "risk_level_id": null,
+      "start_time": "2026-11-15 00:57:46",
+      "source": null,
+      "twitch_channel": null,
+      "duration": 0,
+      "language": "English",
+      "is_mature": true,
+      "viewer_count": 0,
+      "order": null,
+      "tags": [],
+      "thumbnail": {
+        "srcset": "https://images.kick.com/video_thumbnails/ahwc08MRSmi3/5gFGscVgI5nk/1080.webp?versionId=waQ9iLnQ7HlF8ihmMyPmTXnr6KGwjBC8 1920w, https://images.kick.com/video_thumbnails/ahwc08MRSmi3/5gFGscVgI5nk/720.webp?versionId=xyQANCaUZ5Lml2HEUXyNseBVI0c3EbQX 1280w, https://images.kick.com/video_thumbnails/ahwc08MRSmi3/5gFGscVgI5nk/360.webp?versionId=MoVZKyEEnVTPIZH0THFeP5jFx6541ZWO 480w, https://images.kick.com/video_thumbnails/ahwc08MRSmi3/5gFGscVgI5nk/160.webp?versionId=JnWAcOYjjydrJOyHLVOjP4.qOMVpm8Mk 284w, https://images.kick.com/video_thumbnails/ahwc08MRSmi3/5gFGscVgI5nk/480.webp?versionId=Jq.dfVvekrWSbzwOVLz4kbxmOIly2ryG 640w",
+        "src": "https://images.kick.com/video_thumbnails/ahwc08MRSmi3/5gFGscVgI5nk/720.webp?versionId=xyQANCaUZ5Lml2HEUXyNseBVI0c3EbQX"
+      },
+      "viewers": 0,
+      "show_view_count": true,
+      "channel": {
+        "id": 115583301,
+        "user_id": 116829492,
+        "slug": "toxic-claw",
+        "is_banned": false,
+        "playback_url": "https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/us-west-2.196233775518.channel.ahwc08MRSmi3.m3u8",
+        "name_updated_at": null,
+        "vod_enabled": true,
+        "subscription_enabled": false,
+        "is_affiliate": false,
+        "can_host": true,
+        "user": {
+          "id": 116829492,
+          "username": "Toxic_Claw",
+          "agreed_to_terms": true,
+          "country": null,
+          "state": null,
+          "city": null,
+          "gender": null,
+          "club": null,
+          "profilepic": "https://files.kick.com/images/user/116829492/profile_image/conversion/b739f67d-611b-419d-a290-ad2f01507fdb-thumb.webp"
+        }
+      },
+      "categories": [
+        {
+          "id": 94,
+          "category_id": 1,
+          "name": "Dead By Daylight",
+          "slug": "dead-by-daylight",
+          "tags": [
+            "Action",
+            "Horror"
+          ],
+          "description": null,
+          "deleted_at": null,
+          "is_mature": false,
+          "viewers": 1333,
+          "is_fallback": false,
+          "category": {
+            "id": 1,
+            "name": "Games",
+            "slug": "games",
+            "icon": "🕹️"
+          }
+        }
+      ]
+    },
+    {
+      "id": 137906484,
+      "slug": "8a7d710d1bcbb976-true-ending-or-nothing",
+      "channel_id": 90480751,
+      "created_at": "2026-11-15 00:57:27",
+      "session_title": "TRUE ENDING OR NOTHING!",
+      "is_live": true,
+      "risk_level_id": null,
+      "start_time": "2026-11-15 00:57:24",
+      "source": null,
+      "twitch_channel": null,
+      "duration": 0,
+      "language": "English",
+      "is_mature": false,
+      "viewer_count": 0,
+      "order": null,
+      "tags": [],
+      "thumbnail": {
+        "srcset": "https://images.kick.com/video_thumbnails/DGORl5w0KJKK/dvUcwWXTgQ3x/1080.webp?versionId=Nn.n5ZW_qO9galGfOI4qJIJtbGiRaVZl 1920w, https://images.kick.com/video_thumbnails/DGORl5w0KJKK/dvUcwWXTgQ3x/720.webp?versionId=yRY3H1D.941uqwN5KIllUvKpTT1J9AQ2 1280w, https://images.kick.com/video_thumbnails/DGORl5w0KJKK/dvUcwWXTgQ3x/360.webp?versionId=itLl5rjY7zl5A_F6BL530nbbHysa6g0Y 480w, https://images.kick.com/video_thumbnails/DGORl5w0KJKK/dvUcwWXTgQ3x/160.webp?versionId=5XJtMHSH.KU7EJg4jLtgdNLXD92mk673 284w, https://images.kick.com/video_thumbnails/DGORl5w0KJKK/dvUcwWXTgQ3x/480.webp?versionId=LsocpOjoHSzj8UEhlc_vWQF642qvParG 640w",
+        "src": "https://images.kick.com/video_thumbnails/DGORl5w0KJKK/dvUcwWXTgQ3x/720.webp?versionId=yRY3H1D.941uqwN5KIllUvKpTT1J9AQ2"
+      },
+      "viewers": 0,
+      "show_view_count": true,
+      "channel": {
+        "id": 90480751,
+        "user_id": 91686396,
+        "slug": "akosibeat",
+        "is_banned": false,
+        "playback_url": "https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/us-west-2.196233775518.channel.DGORl5w0KJKK.m3u8",
+        "name_updated_at": null,
+        "vod_enabled": true,
+        "subscription_enabled": true,
+        "is_affiliate": true,
+        "can_host": true,
+        "user": {
+          "id": 91686396,
+          "username": "akosibeat",
+          "agreed_to_terms": true,
+          "country": null,
+          "state": null,
+          "city": null,
+          "gender": null,
+          "club": "",
+          "profilepic": "https://files.kick.com/images/user/91686396/profile_image/conversion/d0afe207-08f5-412f-b437-3e85f0912d66-thumb.webp"
+        }
+      },
+      "categories": [
+        {
+          "id": 19613,
+          "category_id": 1,
+          "name": "Phantom Blade Zero",
+          "slug": "phantom-blade-zero",
+          "tags": [
+            "Adventure"
+          ],
+          "description": null,
+          "deleted_at": null,
+          "is_mature": false,
+          "viewers": 450,
+          "is_fallback": false,
+          "category": {
+            "id": 1,
+            "name": "Games",
+            "slug": "games",
+            "icon": "🕹️"
+          }
+        }
+      ]
+    }
+  ],
+  "first_page_url": "https://kick.com/stream/livestreams/en?page=1",
+  "from": 1,
+  "next_page_url": "https://kick.com/stream/livestreams/en?page=2",
+  "path": "https://kick.com/stream/livestreams/en",
+  "per_page": 5,
+  "prev_page_url": null,
+  "to": 5
+}
