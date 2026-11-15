@@ -1,0 +1,102 @@
+{
+  "current_page": 1,
+  "data": [
+    {
+      "id": 261,
+      "category_id": 2,
+      "name": "Special Events",
+      "slug": "special-events",
+      "tags": [
+        "IRL",
+        "special events",
+        "festivals"
+      ],
+      "description": null,
+      "deleted_at": null,
+      "is_mature": false,
+      "viewers": 2544624,
+      "is_fallback": false,
+      "banner": {
+        "responsive": "https://files.kick.com/images/subcategories/261/banner/responsives/dbc41a13-92bd-46cc-9c60-59be5416a5cb___banner_816_816.webp 816w, https://files.kick.com/images/subcategories/261/banner/responsives/dbc41a13-92bd-46cc-9c60-59be5416a5cb___banner_682_682.webp 682w, https://files.kick.com/images/subcategories/261/banner/responsives/dbc41a13-92bd-46cc-9c60-59be5416a5cb___banner_571_571.webp 571w, https://files.kick.com/images/subcategories/261/banner/responsives/dbc41a13-92bd-46cc-9c60-59be5416a5cb___banner_477_477.webp 477w, https://files.kick.com/images/subcategories/261/banner/responsives/dbc41a13-92bd-46cc-9c60-59be5416a5cb___banner_399_399.webp 399w, https://files.kick.com/images/subcategories/261/banner/responsives/dbc41a13-92bd-46cc-9c60-59be5416a5cb___banner_334_334.webp 334w, https://files.kick.com/images/subcategories/261/banner/responsives/dbc41a13-92bd-46cc-9c60-59be5416a5cb___banner_279_279.webp 279w, https://files.kick.com/images/subcategories/261/banner/responsives/dbc41a13-92bd-46cc-9c60-59be5416a5cb___banner_234_234.webp 234w",
+        "url": "https://files.kick.com/images/subcategories/261/banner/conversion/dbc41a13-92bd-46cc-9c60-59be5416a5cb-banner.webp"
+      },
+      "category": {
+        "id": 2,
+        "name": "IRL",
+        "slug": "irl",
+        "icon": "🎙️"
+      }
+    },
+    {
+      "id": 15,
+      "category_id": 2,
+      "name": "Just Chatting",
+      "slug": "just-chatting",
+      "tags": [
+        "IRL",
+        "Casual"
+      ],
+      "description": null,
+      "deleted_at": null,
+      "is_mature": false,
+      "viewers": 257963,
+      "is_fallback": true,
+      "banner": {
+        "responsive": "https://files.kick.com/images/subcategories/15/banner/responsives/5546d68b-e9f9-49f9-a658-9d2ece637064___banner_408_408.webp 408w, https://files.kick.com/images/subcategories/15/banner/responsives/5546d68b-e9f9-49f9-a658-9d2ece637064___banner_341_341.webp 341w, https://files.kick.com/images/subcategories/15/banner/responsives/5546d68b-e9f9-49f9-a658-9d2ece637064___banner_285_285.webp 285w, https://files.kick.com/images/subcategories/15/banner/responsives/5546d68b-e9f9-49f9-a658-9d2ece637064___banner_238_238.webp 238w",
+        "url": "https://files.kick.com/images/subcategories/15/banner/conversion/5546d68b-e9f9-49f9-a658-9d2ece637064-banner.webp"
+      },
+      "category": {
+        "id": 2,
+        "name": "IRL",
+        "slug": "irl",
+        "icon": "🎙️"
+      }
+    },
+    {
+      "id": 8549,
+      "category_id": 2,
+      "name": "IRL",
+      "slug": "irl",
+      "tags": [
+        "Adventure"
+      ],
+      "description": null,
+      "deleted_at": null,
+      "is_mature": false,
+      "viewers": 175451,
+      "is_fallback": false,
+      "banner": {
+        "responsive": "https://files.kick.com/images/subcategories/8549/banner/responsives/7cea5198-c89c-438e-a94f-f2ead386829b___banner_408_408.webp 408w, https://files.kick.com/images/subcategories/8549/banner/responsives/7cea5198-c89c-438e-a94f-f2ead386829b___banner_341_341.webp 341w, https://files.kick.com/images/subcategories/8549/banner/responsives/7cea5198-c89c-438e-a94f-f2ead386829b___banner_285_285.webp 285w, https://files.kick.com/images/subcategories/8549/banner/responsives/7cea5198-c89c-438e-a94f-f2ead386829b___banner_238_238.webp 238w, https://files.kick.com/images/subcategories/8549/banner/responsives/7cea5198-c89c-438e-a94f-f2ead386829b___banner_199_199.webp 199w",
+        "url": "https://files.kick.com/images/subcategories/8549/banner/conversion/7cea5198-c89c-438e-a94f-f2ead386829b-banner.webp"
+      },
+      "category": {
+        "id": 2,
+        "name": "IRL",
+        "slug": "irl",
+        "icon": "🎙️"
+      }
+    }
+  ],
+  "first_page_url": "https://kick.com/api/v1/subcategories?page=1",
+  "from": 1,
+  "last_page": 1827,
+  "last_page_url": "https://kick.com/api/v1/subcategories?page=1827",
+  "links": [
+    {
+      "url": null,
+      "label": "Previous",
+      "active": false
+    },
+    {
+      "url": "https://kick.com/api/v1/subcategories?page=1",
+      "label": "1",
+      "active": true
+    }
+  ],
+  "next_page_url": "https://kick.com/api/v1/subcategories?page=2",
+  "path": "https://kick.com/api/v1/subcategories",
+  "per_page": 10,
+  "prev_page_url": null,
+  "to": 10,
+  "total": 18263
+}

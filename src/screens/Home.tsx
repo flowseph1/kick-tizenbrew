@@ -1,6 +1,8 @@
 import { useMemo } from 'preact/hooks';
 import { useApp, useScreenActions } from '../app/context';
+import { useOpenLivestream } from '../app/openLivestream';
 import { useAsync } from '../app/useAsync';
+import { CategoryTile } from '../components/CategoryTile';
 import { ErrorScreen } from '../components/ErrorScreen';
 import { LivestreamTile } from '../components/LivestreamTile';
 import { Row } from '../components/Row';
@@ -9,7 +11,9 @@ import { createExitGuard, EXIT_WINDOW_MS } from '../nav/exitGuard';
 export function Home() {
   const app = useApp();
   const { api, t } = app;
-  const [top, reload] = useAsync(() => api.topLivestreams());
+  const open = useOpenLivestream();
+  const [top, reloadTop] = useAsync(() => api.topLivestreams());
+  const [categories, reloadCategories] = useAsync(() => api.topCategories());
   const guard = useMemo(() => createExitGuard(app.now), [app]);
 
   useScreenActions((action) => {
@@ -22,7 +26,16 @@ export function Home() {
     return true;
   });
 
-  if (top.status === 'error') return <ErrorScreen onRetry={reload} />;
+  if (top.status === 'error' || categories.status === 'error') {
+    return (
+      <ErrorScreen
+        onRetry={() => {
+          if (top.status === 'error') reloadTop();
+          if (categories.status === 'error') reloadCategories();
+        }}
+      />
+    );
+  }
 
   return (
     <div class="home">
@@ -41,10 +54,19 @@ export function Home() {
           {top.value.length === 0 ? (
             <p class="status">{t('home.empty')}</p>
           ) : (
-            top.value.map((ls, i) => <LivestreamTile key={ls.id} livestream={ls} autofocus={i === 0} />)
+            top.value.map((ls, i) => (
+              <LivestreamTile key={ls.id} livestream={ls} autofocus={i === 0} onSelect={() => open(ls)} />
+            ))
           )}
         </Row>
       )}
+      {categories.status === 'ready' && categories.value.length > 0 ? (
+        <Row title={t('home.categories')}>
+          {categories.value.map((c) => (
+            <CategoryTile key={c.id} category={c} onSelect={() => app.push({ name: 'category', category: c })} />
+          ))}
+        </Row>
+      ) : null}
     </div>
   );
 }
