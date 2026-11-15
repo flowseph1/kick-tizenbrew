@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { KickApi } from '../api/types';
-import type { Translate } from '../i18n/strings';
+import { createTranslator, resolveLanguage } from '../i18n/strings';
+import type { Settings, SettingsStore } from '../settings/settings';
 import { FocusManager } from '../nav/focus';
 import { isDirection, toAction } from '../nav/keys';
 import { AppContext, type ActionHandler, type AppServices } from './context';
@@ -9,7 +10,9 @@ import { renderScreen } from './screens';
 
 export interface AppProps {
   api: KickApi;
-  t: Translate;
+  settings: SettingsStore;
+  /** The TV language, for example `es-ES`. Language Auto follows it. */
+  tvLanguage: string;
   exit: () => void;
   now?: () => number;
 }
@@ -19,7 +22,18 @@ function isTextInput(target: EventTarget | null): boolean {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
 }
 
-export function App({ api, t, exit, now = Date.now }: AppProps) {
+export function App({ api, settings: store, tvLanguage, exit, now = Date.now }: AppProps) {
+  const [settings, setSettings] = useState<Settings>(() => store.get());
+  useEffect(() => {
+    setSettings(store.get());
+    return store.subscribe(setSettings);
+  }, [store]);
+  const language = resolveLanguage(settings.language, tvLanguage);
+  const t = useMemo(() => createTranslator(language), [language]);
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   const [stack, setStack] = useState<Route[]>([{ name: 'home' }]);
   const [toast, setToast] = useState<string | null>(null);
   const screenRef = useRef<HTMLDivElement>(null);
@@ -31,13 +45,19 @@ export function App({ api, t, exit, now = Date.now }: AppProps) {
   const exitRef = useRef(exit);
   exitRef.current = exit;
 
+  // One FocusManager for the App's life, so a language change keeps focus where it is.
+  const focusRef = useRef<FocusManager | null>(null);
+  if (!focusRef.current) focusRef.current = new FocusManager(() => screenRef.current);
+
   const services = useMemo<AppServices>(() => {
-    const focus = new FocusManager(() => screenRef.current);
+    const focus = focusRef.current!;
     return {
       api,
       t,
       now,
       focus,
+      settings,
+      setSetting: (key, value) => store.set(key, value),
       screenHandler,
       push: (route) => setStack((s) => s.concat([route])),
       back: () => {
@@ -51,7 +71,7 @@ export function App({ api, t, exit, now = Date.now }: AppProps) {
         toastTimer.current = window.setTimeout(() => setToast(null), ms);
       },
     };
-  }, [api, t, now]);
+  }, [api, t, now, settings, store]);
 
   // Keep focus valid whenever the screen content changes (loading, error, data).
   useEffect(() => {

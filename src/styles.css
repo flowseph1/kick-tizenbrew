@@ -177,3 +177,48 @@ body {
   border: 2px solid var(--accent);
   font-size: 30px;
 }
+
+.top-bar-actions {
+  margin-left: auto;
+}
+
+.top-bar-button {
+  min-width: 0;
+  padding: 12px 32px;
+}
+
+.screen-title {
+  margin: 0 0 48px;
+  font-size: 56px;
+}
+
+.settings-row {
+  margin-bottom: 48px;
+}
+
+.settings-label {
+  margin: 0 0 20px;
+  font-size: 36px;
+}
+
+.settings-options {
+  display: flex;
+}
+
+.option {
+  margin-right: 24px;
+  border: 3px solid transparent;
+}
+
+.option.selected {
+  border-color: var(--accent);
+}
+
+.settings-about {
+  margin-top: 96px;
+  color: var(--muted);
+}
+
+.settings-about p {
+  margin: 0 0 12px;
+}
