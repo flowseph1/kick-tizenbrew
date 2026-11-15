@@ -9,6 +9,8 @@ import { PROXY_BASE } from '../player/route';
 import { createSettingsStore, type KeyValueStorage } from '../settings/settings';
 import type { Category, Channel, ChannelDetail, KickApi, Livestream } from '../api/types';
 import pkg from '../../package.json';
+import chatEvents from '../../test/fixtures/chat-events.json';
+import type { ChatSocket } from '../chat/connection';
 
 function stream(n: number, extra: Partial<Livestream> = {}): Livestream {
   return {
@@ -81,6 +83,26 @@ class FakePlayer implements Player {
 
 let players: FakePlayer[];
 
+/** The chat websocket (see src/chat/connection.ts). */
+class FakeSocket implements ChatSocket {
+  sent: any[] = [];
+  closed = false;
+  onmessage: ((e: { data: string }) => void) | null = null;
+  onclose: (() => void) | null = null;
+  constructor(public url: string) {}
+  send(text: string) {
+    this.sent.push(JSON.parse(text));
+  }
+  close() {
+    this.closed = true;
+  }
+  receive(frame: unknown) {
+    this.onmessage!({ data: JSON.stringify(frame) });
+  }
+}
+
+let sockets: FakeSocket[];
+
 async function until(check: () => boolean) {
   for (let i = 0; i < 50; i++) {
     if (check()) return;
@@ -127,6 +149,11 @@ function mount(api: Partial<KickApi>, tvLanguage = 'en-US') {
     },
     proxyReady: async () => true,
     fetchText: async () => masterFixture,
+    createSocket: (url: string) => {
+      const s = new FakeSocket(url);
+      sockets.push(s);
+      return s;
+    },
   };
   render(
     <App
@@ -160,6 +187,7 @@ beforeEach(() => {
   exit = vi.fn<() => void>();
   now = 10_000;
   players = [];
+  sockets = [];
   storage = memoryStorage();
   // happy-dom has no layout. Lay focusables out left to right in document order.
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
@@ -488,6 +516,146 @@ describe('Info Bar and Quality', () => {
     await until(() => root.querySelectorAll('.quality-option').length === 6);
     expect(focusedText()).toBe('Auto');
     expect(players[1].qualities).toEqual([]);
+  });
+});
+
+describe('Chat Overlay', () => {
+  const live = stream(1, { title: 'Late night chess' });
+
+  async function playing() {
+    mount({
+      topLivestreams: async () => [live],
+      channel: async (slug) => channelFor(live, slug),
+    });
+    await until(() => root.querySelectorAll('.tile').length === 1);
+    await until(() => focusedText() !== null);
+    press('Enter');
+    await until(() => players.length === 1 && players[0].opened.length === 1);
+    players[0].emit({ type: 'playing' });
+  }
+
+  function overlay() {
+    return root.querySelector('.chat-overlay');
+  }
+
+  function chatMessage(n: number, content = 'm' + n) {
+    return {
+      event: 'App\\Events\\ChatMessageEvent',
+      channel: 'chatrooms.11.v2',
+      data: JSON.stringify({ id: 'id' + n, content, sender: { username: 'user' + n, identity: { color: '#112233' } } }),
+    };
+  }
+
+  async function openChat() {
+    press('g');
+    await until(() => !!overlay());
+    sockets[0].receive(chatEvents[0]);
+  }
+
+  it('the green key shows the Chat Overlay on the Channel chatroom, and hides it', async () => {
+    await playing();
+    expect(overlay()).toBeNull();
+    await openChat();
+    expect(sockets[0].sent).toContainEqual({ event: 'pusher:subscribe', data: { auth: '', channel: 'chatrooms.11.v2' } });
+
+    press('g');
+    await until(() => !overlay());
+    expect(sockets[0].closed).toBe(true);
+  });
+
+  it('shows new messages live, with the user name in its Kick colour, emotes as images and no badges', async () => {
+    await playing();
+    await openChat();
+    sockets[0].receive(chatEvents[2]);
+    sockets[0].receive(chatEvents[3]);
+    await until(() => root.querySelectorAll('.chat-message').length === 2);
+
+    const [reply, emote] = Array.prototype.slice.call(root.querySelectorAll('.chat-message')) as HTMLElement[];
+    expect(reply.querySelector('.chat-user')!.textContent).toBe('jese_vp');
+    expect((reply.querySelector('.chat-user') as HTMLElement).style.color).toBe('#FF2C56');
+    expect(reply.textContent).toContain("Majora's mask Cinema");
+    const img = emote.querySelector('img')!;
+    expect(img.getAttribute('src')).toBe('https://files.kick.com/emotes/1730760/fullsize');
+    expect(img.getAttribute('alt')).toBe('emojiCrave');
+    expect(overlay()!.querySelectorAll('img')).toHaveLength(1);
+    expect(overlay()!.innerHTML).not.toContain('badges');
+  });
+
+  it('shows message text as text, never as HTML', async () => {
+    await playing();
+    await openChat();
+    sockets[0].receive(chatMessage(1, '<img src=x onerror=alert(1)>'));
+    await until(() => root.querySelectorAll('.chat-message').length === 1);
+    expect(overlay()!.querySelectorAll('img')).toHaveLength(0);
+    expect(overlay()!.textContent).toContain('<img src=x onerror=alert(1)>');
+  });
+
+  it('keeps only the last 50 messages', async () => {
+    await playing();
+    await openChat();
+    for (let i = 1; i <= 55; i++) sockets[0].receive(chatMessage(i));
+    await until(() => root.querySelectorAll('.chat-message').length === 50);
+    expect(root.querySelector('.chat-message')!.textContent).toContain('m6');
+  });
+
+  it('the Chat button in the Info Bar toggles it too, and the overlay stays open when the Info Bar hides', async () => {
+    await playing();
+    vi.useFakeTimers();
+    press('Enter');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(focusedText()).toBe('Favourite');
+    button('Chat').click();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(overlay()).not.toBeNull();
+    expect(button('Chat').getAttribute('aria-pressed')).toBe('true');
+
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(root.querySelector('.info-bar')).toBeNull();
+    expect(overlay()).not.toBeNull();
+    vi.useRealTimers();
+
+    press('Enter');
+    await until(() => focusedText() === 'Favourite');
+    button('Chat').click();
+    await until(() => !overlay());
+  });
+
+  it('Back closes the Info Bar, then the Chat Overlay, then leaves playback and closes the websocket', async () => {
+    await playing();
+    await openChat();
+    press('Enter');
+    await until(() => !!root.querySelector('.info-bar'));
+
+    press('Escape');
+    await until(() => !root.querySelector('.info-bar'));
+    expect(overlay()).not.toBeNull();
+    press('Escape');
+    await until(() => !overlay());
+    expect(root.querySelector('.playback')).not.toBeNull();
+    press('Escape');
+    await until(() => root.querySelectorAll('.tile').length === 1);
+  });
+
+  it('closes the websocket when playback ends with the overlay open', async () => {
+    await playing();
+    await openChat();
+    press('Escape');
+    await until(() => !overlay());
+    press('g');
+    await until(() => !!overlay());
+    expect(sockets).toHaveLength(2);
+    pressCode(413);
+    await until(() => root.querySelectorAll('.tile').length === 1);
+    expect(sockets[1].closed).toBe(true);
+  });
+
+  it('shows "Livestream ended" when chat reports the end', async () => {
+    await playing();
+    await openChat();
+    sockets[0].receive({ event: 'App\\Events\\StopStreamBroadcast', data: '{}', channel: 'channel.1' });
+    await until(() => root.textContent!.includes('Livestream ended'));
+    expect(overlay()).toBeNull();
+    await until(() => sockets[0].closed);
   });
 });
 

@@ -277,6 +277,43 @@ html.playing body {
   min-width: 220px;
 }
 
+/* Chat Overlay: a semi transparent column on the right, over a full size video. Newest at the bottom. */
+.chat-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 25%;
+  padding: 32px 28px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  font-size: 26px;
+  line-height: 36px;
+}
+
+.chat-message {
+  flex: 0 0 auto;
+  margin-top: 8px;
+  word-wrap: break-word;
+}
+
+.chat-user {
+  font-weight: 700;
+}
+
+.chat-emote {
+  height: 32px;
+  vertical-align: middle;
+}
+
+.chat-waiting {
+  color: var(--muted);
+}
+
 /* The Quality in use. */
 .quality-option.selected {
   box-shadow: inset 0 -6px 0 var(--accent);
