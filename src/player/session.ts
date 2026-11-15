@@ -2,8 +2,11 @@
 // - The Livestream ends (player end, or the Channel is offline): "ended" for 5 s, then onDone().
 // - The network drops: reconnect (fresh Channel and token, reopen) every few seconds for up to 30 s,
 //   then "error". The UI shows the error screen; its Retry calls start() again.
+// - Quality: every start() begins at Auto. hls.js switches in place; AVPlay reopens at the variant,
+//   and an AVPlay reconnect reopens the master, so it returns to Auto.
 import type { ChannelDetail, KickApi } from '../api/types';
-import { choosePlaylistUrl, PROXY_BASE, type TizenVersion } from './route';
+import { parseQualities, sameQuality, type Quality } from './quality';
+import { choosePlaylistUrl, chooseVariantUrl, masterTextUrl, PROXY_BASE, type TizenVersion } from './route';
 import type { Player, PlayerEvent, PlayerFactory } from './types';
 
 export const ENDED_MS = 5000;
@@ -27,6 +30,8 @@ export interface SessionOptions {
   onState: (state: SessionState) => void;
   /** The "ended" message was shown for 5 s: return to the previous screen. */
   onDone: () => void;
+  /** GET a URL as text (the master playlist through the proxy, for the Quality list). Rejects on failure. */
+  fetchText: (url: string) => Promise<string>;
 }
 
 export interface PlaybackSession {
@@ -38,8 +43,14 @@ export interface PlaybackSession {
   stop(): void;
   /** The Channel being played, once fetched: name, chatroom id and Livestream for the Info Bar (05) and chat (07). */
   channel(): ChannelDetail | null;
-  /** The player in use, for Quality changes (ticket 05). */
+  /** The player in use. */
   player(): Player | null;
+  /** The variants of the Livestream's master playlist (fresh token), best first. Auto is not in it. */
+  qualities(): Promise<Quality[]>;
+  /** The chosen Quality; null is Auto. */
+  quality(): Quality | null;
+  /** Applies a Quality (null = Auto) to the current Livestream: in place on hls.js, a reopen on AVPlay. */
+  setQuality(quality: Quality | null): void;
 }
 
 export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
@@ -48,6 +59,8 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
   let channel: ChannelDetail | null = null;
   let run = 0;
   let proxyOk = false;
+  /** The chosen Quality; null is Auto. */
+  let chosen: Quality | null = null;
   let endedTimer: ReturnType<typeof setTimeout> | undefined;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
   let deadline: ReturnType<typeof setTimeout> | undefined;
@@ -112,6 +125,14 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
       }
     }
     player.open(url);
+    // The master opens at Auto: re-apply a chosen Quality. A player that cannot switch in place
+    // (AVPlay) stays on the master, so the Quality returns to Auto.
+    if (chosen && !player.setQuality(chosen)) chosen = null;
+  }
+
+  async function ensureProxy(): Promise<void> {
+    if (!proxyOk) proxyOk = await opts.proxyReady();
+    if (!proxyOk) throw new Error('playlist proxy not running');
   }
 
   function scheduleRetry() {
@@ -148,6 +169,7 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
       const id = ++run;
       clearTimers();
       closePlayer();
+      chosen = null;
       set('loading');
       openFresh(id).catch(() => {
         if (id === run) fail();
@@ -174,5 +196,30 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
     },
     channel: () => channel,
     player: () => current,
+    async qualities() {
+      // A fresh Channel: the playback token in the first one expires about 10 min later.
+      const ch = await opts.api.channel(opts.slug);
+      if (!ch.playbackUrl) return [];
+      await ensureProxy();
+      return parseQualities(await opts.fetchText(masterTextUrl(ch.playbackUrl)));
+    },
+    quality: () => chosen,
+    setQuality(quality) {
+      const p = current;
+      if (!p || status === 'ended' || status === 'error') return;
+      if (sameQuality(quality, chosen)) return;
+      chosen = quality;
+      if (p.setQuality(quality)) return;
+      // AVPlay: reopen. A variant opens its media playlist; Auto opens the master with a fresh token.
+      set('loading');
+      if (quality) {
+        p.open(chooseVariantUrl(quality.url, opts.tizen));
+        return;
+      }
+      const id = run;
+      openFresh(id).catch(() => {
+        if (id === run) fail();
+      });
+    },
   };
 }

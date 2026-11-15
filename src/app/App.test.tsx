@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'preact';
 import { App } from './App';
 import type { Player, PlayerEvent } from '../player/types';
+import type { Quality } from '../player/quality';
+import masterFixture from '../../test/fixtures/master.m3u8?raw';
 import { PROXY_BASE } from '../player/route';
 import { createSettingsStore, type KeyValueStorage } from '../settings/settings';
 import type { Category, Channel, ChannelDetail, KickApi, Livestream } from '../api/types';
@@ -56,10 +58,15 @@ class FakePlayer implements Player {
   readonly engine = 'hlsjs' as const;
   opened: string[] = [];
   calls: string[] = [];
+  qualities: (string | null)[] = [];
   closed = false;
   constructor(public emit: (e: PlayerEvent) => void) {}
   open(url: string) {
     this.opened.push(url);
+  }
+  setQuality(q: Quality | null) {
+    this.qualities.push(q ? q.label : null);
+    return true;
   }
   play() {
     this.calls.push('play');
@@ -119,6 +126,7 @@ function mount(api: Partial<KickApi>, tvLanguage = 'en-US') {
       return p;
     },
     proxyReady: async () => true,
+    fetchText: async () => masterFixture,
   };
   render(
     <App
@@ -353,6 +361,133 @@ describe('Playback', () => {
     press('Enter');
     await until(() => players.length === 2 && players[1].opened.length === 1);
     expect(root.textContent).not.toContain('Could not reach Kick');
+  });
+});
+
+describe('Info Bar and Quality', () => {
+  const live = stream(1, { title: 'Late night chess', viewerCount: 12345, category: category('chess', { name: 'Chess' }) });
+
+  async function playing() {
+    mount({
+      topLivestreams: async () => [live],
+      channel: async (slug) => channelFor(live, slug),
+    });
+    await until(() => root.querySelectorAll('.tile').length === 1);
+    await until(() => focusedText() !== null);
+    press('Enter');
+    await until(() => players.length > 0 && players[players.length - 1].opened.length === 1);
+    players[players.length - 1].emit({ type: 'playing' });
+  }
+
+  function infoBar() {
+    return root.querySelector('.info-bar');
+  }
+
+  it('OK shows the Channel, title, Category and viewer count with focus on the buttons; it hides after 5 s with no key press', async () => {
+    await playing();
+    expect(infoBar()).toBeNull();
+    vi.useFakeTimers();
+    press('Enter');
+    await vi.advanceTimersByTimeAsync(0);
+
+    const bar = infoBar()!;
+    expect(bar.textContent).toContain('Channel 1');
+    expect(bar.textContent).toContain('Late night chess');
+    expect(bar.textContent).toContain('Chess');
+    expect(bar.textContent).toContain('12,345 viewers');
+    expect(focusedText()).toBe('Favourite');
+
+    // A key press restarts the 5 s.
+    await vi.advanceTimersByTimeAsync(4000);
+    press('ArrowRight');
+    await vi.advanceTimersByTimeAsync(4900);
+    expect(infoBar()).not.toBeNull();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(infoBar()).toBeNull();
+    expect(root.querySelector('.focused')).toBeNull();
+  });
+
+  it('the three buttons take focus with the arrows; Favourite and Chat do nothing yet', async () => {
+    await playing();
+    press('Enter');
+    await until(() => focusedText() === 'Favourite');
+    press('ArrowRight');
+    expect(focusedText()).toBe('Chat');
+    press('ArrowRight');
+    expect(focusedText()).toBe('Quality');
+    press('ArrowLeft');
+    press('Enter');
+    press('ArrowLeft');
+    press('Enter');
+    expect(infoBar()).not.toBeNull();
+    expect(players[0].opened).toHaveLength(1);
+  });
+
+  it('Quality lists Auto plus the variants, Auto first; choosing one applies it to the Livestream', async () => {
+    await playing();
+    press('Enter');
+    await until(() => focusedText() === 'Favourite');
+    button('Quality').click();
+    await until(() => !!root.querySelector('.quality-list'));
+    await until(() => root.querySelectorAll('.quality-option').length === 6);
+
+    const labels = Array.prototype.map.call(root.querySelectorAll('.quality-option'), (el: HTMLElement) => el.textContent);
+    expect(labels).toEqual(['Auto', '1080p60', '720p60', '480p30', '360p30', '160p30']);
+    expect(focusedText()).toBe('Auto');
+
+    press('ArrowRight');
+    press('ArrowRight');
+    expect(focusedText()).toBe('720p60');
+    press('Enter');
+    await until(() => !root.querySelector('.quality-list'));
+    expect(players[0].qualities).toEqual(['720p60']);
+    expect(focusedText()).toBe('Quality');
+
+    // The list opens on the Quality in use.
+    press('Enter');
+    await until(() => root.querySelectorAll('.quality-option').length === 6);
+    expect(focusedText()).toBe('720p60');
+  });
+
+  it('Back closes the Quality list, then the Info Bar, then leaves playback', async () => {
+    await playing();
+    press('Enter');
+    await until(() => focusedText() === 'Favourite');
+    button('Quality').click();
+    await until(() => root.querySelectorAll('.quality-option').length === 6);
+
+    press('Escape');
+    await until(() => !root.querySelector('.quality-list'));
+    expect(infoBar()).not.toBeNull();
+    press('Escape');
+    await until(() => !infoBar());
+    expect(root.querySelector('.playback')).not.toBeNull();
+    press('Escape');
+    await until(() => root.querySelectorAll('.tile').length === 1);
+  });
+
+  it('a new Livestream starts at Auto', async () => {
+    await playing();
+    press('Enter');
+    await until(() => focusedText() === 'Favourite');
+    button('Quality').click();
+    await until(() => root.querySelectorAll('.quality-option').length === 6);
+    button('1080p60').click();
+    await until(() => !root.querySelector('.quality-list'));
+    press('Escape');
+    press('Escape');
+    await until(() => root.querySelectorAll('.tile').length === 1);
+
+    await until(() => focusedText() !== null);
+    press('Enter');
+    await until(() => players.length === 2 && players[1].opened.length === 1);
+    players[1].emit({ type: 'playing' });
+    press('Enter');
+    await until(() => focusedText() === 'Favourite');
+    button('Quality').click();
+    await until(() => root.querySelectorAll('.quality-option').length === 6);
+    expect(focusedText()).toBe('Auto');
+    expect(players[1].qualities).toEqual([]);
   });
 });
 

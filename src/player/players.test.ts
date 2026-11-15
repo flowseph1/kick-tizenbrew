@@ -126,6 +126,16 @@ describe('AvPlayPlayer', () => {
     expect(av.log.slice(0, 3)).toEqual(['stop', 'close', 'open u2']);
   });
 
+  it('cannot switch Quality in place, so the session reopens; the stream is left alone', () => {
+    const { av, player } = make();
+    player.open('u1');
+    av.prepared!.ok();
+    av.log = [];
+    expect(player.setQuality({ label: '720p60', height: 720, bandwidth: 1, url: 'v' })).toBe(false);
+    expect(player.setQuality(null)).toBe(false);
+    expect(av.log).toEqual([]);
+  });
+
   it('close() stops, frees AVPlay, removes the plane and sends no more events', () => {
     const { av, events, player } = make();
     player.open('u1');

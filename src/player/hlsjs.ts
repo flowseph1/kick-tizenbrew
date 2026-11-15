@@ -1,6 +1,7 @@
 // Player on `<video>` + hls.js (MSE). Desktop Chrome, and the TV when `webapis.avplay` is missing.
 // hls.js/light: no subtitles, EME or alternate audio (the proxy strips subtitles anyway).
 import Hls from 'hls.js/light';
+import type { Quality } from './quality';
 import type { Player, PlayerEvent } from './types';
 
 export class HlsJsPlayer implements Player {
@@ -10,6 +11,8 @@ export class HlsJsPlayer implements Player {
   private video: HTMLVideoElement | null = null;
   private hls: Hls | null = null;
   private gen = 0;
+  /** The chosen Quality (null = Auto). Kept across reopens (reconnects) of this player. */
+  private quality: Quality | null = null;
 
   constructor(emit: (e: PlayerEvent) => void, doc: Document = document) {
     this.emit = emit;
@@ -67,7 +70,10 @@ export class HlsJsPlayer implements Player {
     });
     this.hls = hls;
     let mediaRecoveries = 0;
-    hls.on(Hls.Events.MANIFEST_PARSED, () => this.start(video));
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      this.applyQuality();
+      this.start(video);
+    });
     hls.on(Hls.Events.ERROR, (_event, data) => {
       if (!data.fatal) return;
       if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRecoveries < 2) {
@@ -80,6 +86,27 @@ export class HlsJsPlayer implements Player {
     });
     hls.loadSource(url);
     hls.attachMedia(video);
+  }
+
+  /** In place: `currentLevel` flushes the buffer and loads the new level now; -1 is Auto (ABR). */
+  setQuality(quality: Quality | null): boolean {
+    this.quality = quality;
+    if (this.hls && this.hls.levels && this.hls.levels.length) this.applyQuality();
+    return true;
+  }
+
+  /** hls.js sorts levels by bitrate, so find the level by the variant's BANDWIDTH, else its height. */
+  private applyQuality(): void {
+    const hls = this.hls;
+    if (!hls) return;
+    const q = this.quality;
+    let level = -1;
+    if (q) {
+      const levels = hls.levels || [];
+      for (let i = 0; i < levels.length && level === -1; i++) if (levels[i].bitrate === q.bandwidth) level = i;
+      for (let i = 0; i < levels.length && level === -1; i++) if (levels[i].height === q.height) level = i;
+    }
+    if (hls.currentLevel !== level) hls.currentLevel = level;
   }
 
   private start(video: HTMLVideoElement): void {

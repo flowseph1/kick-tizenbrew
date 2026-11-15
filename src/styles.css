@@ -229,6 +229,63 @@ html.playing body {
   background: var(--bg);
 }
 
+/* Info Bar: a strip at the bottom of the video, over the AVPlay plane or the <video>. */
+.info-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 40px 80px 56px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.75) 70%, rgba(0, 0, 0, 0));
+}
+
+.info-bar-channel {
+  color: var(--accent);
+  font-size: 40px;
+  font-weight: 800;
+}
+
+.info-bar-title {
+  margin-top: 8px;
+  font-size: 32px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.info-bar-meta {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 28px;
+  white-space: pre;
+}
+
+.info-bar-buttons {
+  display: flex;
+  margin-top: 28px;
+  min-height: 72px;
+  align-items: center;
+}
+
+.info-bar-buttons .button {
+  min-width: 0;
+  margin-right: 24px;
+}
+
+.info-bar-buttons .info-bar-button {
+  min-width: 220px;
+}
+
+/* The Quality in use. */
+.quality-option.selected {
+  box-shadow: inset 0 -6px 0 var(--accent);
+}
+
+.quality-option.selected.focused {
+  box-shadow: inset 0 -6px 0 #000;
+}
+
 .screen-title {
   margin: 0;
   font-size: 48px;

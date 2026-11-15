@@ -33,7 +33,21 @@ export function avplayNeedsProxy(version: TizenVersion | null): boolean {
 
 export function choosePlaylistUrl(playbackUrl: string, engine: Engine, version: TizenVersion | null): string {
   const u = encodeURIComponent(playbackUrl);
-  if (engine === 'hlsjs') return PROXY_BASE + '/master.m3u8?u=' + u;
+  if (engine === 'hlsjs') return masterTextUrl(playbackUrl);
   if (avplayNeedsProxy(version)) return PROXY_BASE + '/master.m3u8?rewrite=1&u=' + u;
   return playbackUrl;
+}
+
+/**
+ * The URL AVPlay reopens for one Quality (a variant media playlist from the master). AVPlay has no
+ * in place variant switch; hls.js switches in place and never needs this. See the spec, Playback.
+ */
+export function chooseVariantUrl(variantUrl: string, version: TizenVersion | null): string {
+  if (avplayNeedsProxy(version)) return PROXY_BASE + '/media.m3u8?u=' + encodeURIComponent(variantUrl);
+  return variantUrl;
+}
+
+/** Where the page reads the master playlist text for the Quality list: the proxy, plain and not rewritten. */
+export function masterTextUrl(playbackUrl: string): string {
+  return PROXY_BASE + '/master.m3u8?u=' + encodeURIComponent(playbackUrl);
 }
