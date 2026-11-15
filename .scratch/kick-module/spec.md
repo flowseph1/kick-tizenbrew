@@ -42,10 +42,18 @@ All API responses map into our own types in one adapter module. The UI never rea
 
 ## Playback
 
-- One `Player` interface with two implementations:
-  - `AvPlayPlayer`: `webapis.avplay`, used on the TV. Hardware video plane under transparent HTML.
-  - `HlsJsPlayer`: `<video>` with hls.js, used in desktop Chrome for development, through a local dev proxy to the CDN.
-- Tizen 5.x: AVPlay cannot read Kick's gzip playlists. A `serviceFile` (Node, ES5, runs on Node 4.4.3) proxies playlist requests and returns them uncompressed. Segments go direct to the CDN. On Tizen 6+ AVPlay uses the CDN direct. The test TV is Tizen 5.0, so the proxy path is the one verified first; confirm the direct path on a Tizen 6+ TV when one is available.
+- One `Player` interface (`src/player/types.ts`) with two implementations:
+  - `AvPlayPlayer`: `webapis.avplay`. Hardware video plane under transparent HTML (`html.playing`).
+  - `HlsJsPlayer`: `<video>` with hls.js 1.7.4 (`hls.js/light`, MSE).
+- **Decision (ticket 03): pick the player at runtime.** `AvPlayPlayer` when `webapis.avplay` exists in the page, else `HlsJsPlayer`, on the TV too. Reason: TizenBrew module pages are remote pages and may get no `webapis` (spike 01 saw `tizen` and `webapis` undefined; the Jellyfin TizenBrew port stubs them). Chromium 63 has MSE, so hls.js is a working TV fallback. Which one the test TV uses is still to be confirmed on the TV.
+- `PlaybackSession` (`src/player/session.ts`) owns the rules for both players: fetch the Channel (fresh `?token=`), open, "Livestream ended" for 5 s, reconnect every 3 s for up to 30 s, then the error screen.
+- **Playlist proxy.** A `serviceFile` (`dist/service.js`, source `src/service/*.cjs`, ES5 for Node 4.4.3, port 8093, `GET /ping`, `/master.m3u8?u=`, `/media.m3u8?u=`) fetches playlists without `Accept-Encoding`, strips subtitle groups and serves them plain with `Access-Control-Allow-Origin: *`. It only accepts https URLs on `*.live-video.net` and `*.kick.com`. Segments always go direct to the CDN. Routing (`src/player/route.ts`):
+  - AVPlay on Tizen 5.x (or an unknown version): master through the proxy with `rewrite=1`, so every media playlist also comes plain. Reason: AVPlay on Tizen 5 sends `Accept-Encoding: gzip` but cannot read gzip playlists.
+  - AVPlay on Tizen 6+: the CDN direct. Confirm on a Tizen 6+ TV when one is available.
+  - hls.js (any Tizen version, and desktop): only the master through the proxy. Reason: the master has no CORS header for our origin; media playlists and segments send `Access-Control-Allow-Origin: *`, and the browser decodes gzip.
+  - The Tizen version comes from the user agent (`Tizen 5.0`, or the `63.0.3239.84/5.0 TV` tail).
+  - The page waits for `/ping` (up to about 6 s) before the first proxied open, because TizenBrew starts the service after the page.
+- Desktop development: `npm run dev` runs the same proxy code on `127.0.0.1:8093`.
 - Quality: Auto by default. The `Quality` list shows the variants from the master playlist (for example 1080p60, 720p60, 480p30, 360p30, 160p30). If the TV cannot switch variants in place, reopen the stream at the chosen variant. The choice is not remembered; every Livestream starts at Auto.
 
 ## Screens
