@@ -6,7 +6,7 @@ See `.scratch/kick-module/spec.md` (Home, Category).
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] Home shows a Categories row with images and names.
 - [x] OK opens the Category screen with a grid of its Livestreams.
