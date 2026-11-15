@@ -40,6 +40,27 @@ export function SettingsScreen() {
         </div>
       </section>
 
+      <section class="settings-row">
+        <h2 class="settings-label">{t('settings.contentFilter')}</h2>
+        <div class="settings-options">
+          {[false, true].map((on) => {
+            const selected = settings.contentFilter === on;
+            return (
+              <button
+                key={String(on)}
+                class={'button option' + (selected ? ' selected' : '')}
+                data-focus
+                aria-pressed={selected ? 'true' : 'false'}
+                onClick={() => setSetting('contentFilter', on)}
+              >
+                {t(on ? 'settings.on' : 'settings.off')}
+              </button>
+            );
+          })}
+        </div>
+        <p class="settings-hint">{t('settings.contentFilter.hint')}</p>
+      </section>
+
       <footer class="settings-about">
         <p>{t('settings.version', { version })}</p>
         <p>{t('app.notAffiliated')}</p>

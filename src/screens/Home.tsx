@@ -6,11 +6,12 @@ import { CategoryTile } from '../components/CategoryTile';
 import { ErrorScreen } from '../components/ErrorScreen';
 import { LivestreamTile } from '../components/LivestreamTile';
 import { Row } from '../components/Row';
+import { visibleCategories, visibleLivestreams } from '../filter/contentFilter';
 import { createExitGuard, EXIT_WINDOW_MS } from '../nav/exitGuard';
 
 export function Home() {
   const app = useApp();
-  const { api, t } = app;
+  const { api, t, settings } = app;
   const open = useOpenLivestream();
   const [top, reloadTop] = useAsync(() => api.topLivestreams());
   const [categories, reloadCategories] = useAsync(() => api.topCategories());
@@ -37,6 +38,10 @@ export function Home() {
     );
   }
 
+  const filterOn = settings.contentFilter;
+  const livestreams = top.status === 'ready' ? visibleLivestreams(top.value, filterOn) : [];
+  const shownCategories = categories.status === 'ready' ? visibleCategories(categories.value, filterOn) : [];
+
   return (
     <div class="home">
       <header class="top-bar">
@@ -54,18 +59,18 @@ export function Home() {
         <p class="status">{t('loading')}</p>
       ) : (
         <Row title={t('home.topLivestreams')}>
-          {top.value.length === 0 ? (
+          {livestreams.length === 0 ? (
             <p class="status">{t('home.empty')}</p>
           ) : (
-            top.value.map((ls, i) => (
+            livestreams.map((ls, i) => (
               <LivestreamTile key={ls.id} livestream={ls} autofocus={i === 0} onSelect={() => open(ls)} />
             ))
           )}
         </Row>
       )}
-      {categories.status === 'ready' && categories.value.length > 0 ? (
+      {shownCategories.length > 0 ? (
         <Row title={t('home.categories')}>
-          {categories.value.map((c) => (
+          {shownCategories.map((c) => (
             <CategoryTile key={c.id} category={c} onSelect={() => app.push({ name: 'category', category: c })} />
           ))}
         </Row>

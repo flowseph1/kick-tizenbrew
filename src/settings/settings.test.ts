@@ -60,6 +60,19 @@ describe('settings store', () => {
     storage.data['kick.settings'] = '{not json';
     expect(createSettingsStore(storage).get().language).toBe('auto');
     storage.data['kick.settings'] = JSON.stringify({ language: 'fr', extra: 1 });
-    expect(createSettingsStore(storage).get()).toEqual({ language: 'auto' });
+    expect(createSettingsStore(storage).get()).toEqual({ language: 'auto', contentFilter: false });
+  });
+
+  it('starts with the Content Filter off, and keeps it on across a restart', () => {
+    const storage = memoryStorage();
+    expect(createSettingsStore(storage).get().contentFilter).toBe(false);
+    createSettingsStore(storage).set('contentFilter', true);
+    expect(createSettingsStore(storage).get().contentFilter).toBe(true);
+  });
+
+  it('falls back to the Content Filter off for a stored value that is not true or false', () => {
+    const storage = memoryStorage();
+    storage.data['kick.settings'] = JSON.stringify({ language: 'es', contentFilter: 'yes' });
+    expect(createSettingsStore(storage).get()).toEqual({ language: 'es', contentFilter: false });
   });
 });

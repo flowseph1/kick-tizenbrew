@@ -33,6 +33,11 @@ const en = {
   'settings.language.en': 'English',
   'settings.language.es': 'Español',
   'settings.version': 'Version {version}',
+  'settings.contentFilter': 'Content Filter',
+  'settings.contentFilter.hint': 'Hides gambling Categories and mature Livestreams. Favourites always show.',
+  'settings.off': 'Off',
+  'settings.on': 'On',
+  'search.hidden': 'Hidden by the Content Filter',
 };
 
 export type StringKey = keyof typeof en;
@@ -70,6 +75,11 @@ const es: Strings = {
   'settings.language.en': 'English',
   'settings.language.es': 'Español',
   'settings.version': 'Versión {version}',
+  'settings.contentFilter': 'Filtro de contenido',
+  'settings.contentFilter.hint': 'Oculta las categorías de apuestas y los directos para adultos. Los favoritos siempre se muestran.',
+  'settings.off': 'Desactivado',
+  'settings.on': 'Activado',
+  'search.hidden': 'Oculto por el filtro de contenido',
 };
 
 export const tables: Record<Language, Strings> = { en, es };
