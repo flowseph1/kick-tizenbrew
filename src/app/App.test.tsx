@@ -504,6 +504,57 @@ describe('Search', () => {
     expect(root.querySelector('h1')!.textContent).toBe('Cat slots');
   });
 
+  describe('with the Content Filter on', () => {
+    beforeEach(() => {
+      storage.setItem('kick.settings', JSON.stringify({ contentFilter: true }));
+    });
+
+    it('hides gambling Category results', async () => {
+      await openSearch({
+        search: async () => ({
+          channels: [],
+          categories: [category('slots', { parentSlug: 'gambling', tags: ['Gambling'] }), category('fortnite')],
+        }),
+      });
+      type('s');
+      await wait(400);
+      await until(() => root.querySelectorAll('.category-tile').length === 1);
+      expect(root.textContent).toContain('Cat fortnite');
+      expect(root.textContent).not.toContain('Cat slots');
+    });
+
+    it('says "No results" when the filter hid every result', async () => {
+      await openSearch({
+        search: async () => ({ channels: [], categories: [category('slots', { parentSlug: 'gambling' })] }),
+      });
+      type('slots');
+      await wait(400);
+      await until(() => root.textContent!.includes('No results for "slots"'));
+    });
+
+    it('does not play a live Channel whose Livestream is mature', async () => {
+      await searchAndMoveDown({
+        search: async () => ({ channels: [channel('xqc', { isLive: true })], categories: [] }),
+        channelLivestream: async (slug) => stream(1, { channelSlug: slug, isMature: true }),
+      });
+      press('Enter');
+      await until(() => root.querySelector('.toast') !== null);
+      expect(root.querySelector('.toast')!.textContent).toBe('Hidden by the Content Filter');
+    });
+
+    it('still plays a live Channel whose Livestream is not mature', async () => {
+      const opened: string[] = [];
+      await searchAndMoveDown({
+        search: async () => ({ channels: [channel('xqc', { isLive: true })], categories: [] }),
+        channelLivestream: async (slug) => (opened.push(slug), stream(1, { channelSlug: slug })),
+      });
+      press('Enter');
+      await until(() => opened.length === 1);
+      await wait(10);
+      expect(root.querySelector('.toast')).toBeNull();
+    });
+  });
+
   it('leaves the input for the results on the TV keyboard Done key', async () => {
     await openSearch({ search: async () => ({ channels: [channel('a')], categories: [] }) });
     type('a');
