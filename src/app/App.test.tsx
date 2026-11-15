@@ -41,8 +41,14 @@ function focusedText() {
   return el ? el.textContent : null;
 }
 
-function mount(api: KickApi) {
-  render(<App api={api} t={createTranslator('en')} exit={exit} now={() => now} />, root);
+function mount(api: Partial<KickApi>) {
+  const full: KickApi = {
+    topLivestreams: async () => [],
+    topCategories: async () => [],
+    categoryLivestreams: async () => [],
+    ...api,
+  };
+  render(<App api={full} t={createTranslator('en')} exit={exit} now={() => now} />, root);
 }
 
 beforeEach(() => {
