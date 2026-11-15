@@ -3,15 +3,18 @@ import type { KickApi } from '../api/types';
 import { createTranslator, resolveLanguage } from '../i18n/strings';
 import type { PlaybackDeps } from '../player/deps';
 import type { Settings, SettingsStore } from '../settings/settings';
+import type { Favourite, FavouritesStore } from '../favourites/favourites';
+import { readFavouriteTarget } from '../favourites/target';
 import { FocusManager } from '../nav/focus';
 import { isDirection, toAction } from '../nav/keys';
-import { AppContext, type ActionHandler, type AppServices } from './context';
+import { AppContext, FavouritesContext, type ActionHandler, type AppServices } from './context';
 import type { Route } from './routes';
 import { renderScreen } from './screens';
 
 export interface AppProps {
   api: KickApi;
   settings: SettingsStore;
+  favourites: FavouritesStore;
   /** The TV language, for example `es-ES`. Language Auto follows it. */
   tvLanguage: string;
   exit: () => void;
@@ -24,12 +27,17 @@ function isTextInput(target: EventTarget | null): boolean {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
 }
 
-export function App({ api, settings: store, tvLanguage, exit, playback, now = Date.now }: AppProps) {
+export function App({ api, settings: store, favourites: favouritesStore, tvLanguage, exit, playback, now = Date.now }: AppProps) {
   const [settings, setSettings] = useState<Settings>(() => store.get());
   useEffect(() => {
     setSettings(store.get());
     return store.subscribe(setSettings);
   }, [store]);
+  const [favourites, setFavourites] = useState<Favourite[]>(() => favouritesStore.list());
+  useEffect(() => {
+    setFavourites(favouritesStore.list());
+    return favouritesStore.subscribe(setFavourites);
+  }, [favouritesStore]);
   const language = resolveLanguage(settings.language, tvLanguage);
   const t = useMemo(() => createTranslator(language), [language]);
   useEffect(() => {
@@ -53,6 +61,11 @@ export function App({ api, settings: store, tvLanguage, exit, playback, now = Da
 
   const services = useMemo<AppServices>(() => {
     const focus = focusRef.current!;
+    const toast = (text: string, ms = 2000) => {
+      window.clearTimeout(toastTimer.current);
+      setToast(text);
+      toastTimer.current = window.setTimeout(() => setToast(null), ms);
+    };
     return {
       api,
       t,
@@ -61,6 +74,11 @@ export function App({ api, settings: store, tvLanguage, exit, playback, now = Da
       playback,
       settings,
       setSetting: (key, value) => store.set(key, value),
+      toggleFavourite: (channel) => {
+        const added = favouritesStore.toggle(channel);
+        toast(t(added ? 'favourites.added' : 'favourites.removed', { name: channel.name }));
+      },
+      recordWatch: (slug) => favouritesStore.recordWatch(slug),
       screenHandler,
       push: (route) => setStack((s) => s.concat([route])),
       back: () => {
@@ -68,13 +86,9 @@ export function App({ api, settings: store, tvLanguage, exit, playback, now = Da
         else exitRef.current();
       },
       exit: () => exitRef.current(),
-      toast: (text, ms = 2000) => {
-        window.clearTimeout(toastTimer.current);
-        setToast(text);
-        toastTimer.current = window.setTimeout(() => setToast(null), ms);
-      },
+      toast,
     };
-  }, [api, t, now, settings, store, playback]);
+  }, [api, t, now, settings, store, favouritesStore, playback]);
 
   // Keep focus valid whenever the screen content changes (loading, error, data).
   useEffect(() => {
@@ -98,6 +112,11 @@ export function App({ api, settings: store, tvLanguage, exit, playback, now = Da
       if (isDirection(action)) services.focus.move(action);
       else if (action === 'ok') services.focus.activate();
       else if (action === 'back') services.back();
+      else if (action === 'yellow') {
+        // Any Livestream or Channel tile (Home, Category, Search). Playback handles its own.
+        const channel = readFavouriteTarget(services.focus.focused());
+        if (channel) services.toggleFavourite(channel);
+      }
     }
     window.addEventListener('keydown', onKey, true);
     return () => {
@@ -109,10 +128,12 @@ export function App({ api, settings: store, tvLanguage, exit, playback, now = Da
   const route = stack[stack.length - 1];
   return (
     <AppContext.Provider value={services}>
-      <div class="screen" ref={screenRef}>
-        {renderScreen(route)}
-      </div>
-      {toast ? <div class="toast">{toast}</div> : null}
+      <FavouritesContext.Provider value={favourites}>
+        <div class="screen" ref={screenRef}>
+          {renderScreen(route)}
+        </div>
+        {toast ? <div class="toast">{toast}</div> : null}
+      </FavouritesContext.Provider>
     </AppContext.Provider>
   );
 }

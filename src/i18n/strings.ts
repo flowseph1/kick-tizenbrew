@@ -44,6 +44,9 @@ const en = {
   'settings.off': 'Off',
   'settings.on': 'On',
   'search.hidden': 'Hidden by the Content Filter',
+  'home.favourites': 'Favourites',
+  'favourites.added': 'Added {name} to Favourites',
+  'favourites.removed': 'Removed {name} from Favourites',
 };
 
 export type StringKey = keyof typeof en;
@@ -92,6 +95,9 @@ const es: Strings = {
   'settings.off': 'Desactivado',
   'settings.on': 'Activado',
   'search.hidden': 'Oculto por el filtro de contenido',
+  'home.favourites': 'Favoritos',
+  'favourites.added': '{name} se añadió a favoritos',
+  'favourites.removed': '{name} se quitó de favoritos',
 };
 
 export const tables: Record<Language, Strings> = { en, es };

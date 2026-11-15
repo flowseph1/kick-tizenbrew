@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { useApp, useScreenActions } from '../app/context';
+import { useApp, useFavourites, useScreenActions } from '../app/context';
 import { ChatOverlay, useChat } from '../components/ChatOverlay';
 import { ErrorScreen } from '../components/ErrorScreen';
 import { InfoBar, type InfoBarButton } from '../components/InfoBar';
@@ -23,6 +23,7 @@ type Overlay = 'none' | 'bar' | 'quality';
 export function Playback({ slug }: { slug: string }) {
   const app = useApp();
   const { t } = app;
+  const favourites = useFavourites();
   const [state, setState] = useState<SessionState>({ status: 'loading' });
 
   // The Info Bar. `overlayRef` is read by the key handler, which can run twice before a re-render.
@@ -114,8 +115,13 @@ export function Playback({ slug }: { slug: string }) {
     closeQualityList();
   }
 
-  // Ticket 06: add or remove the Favourite (session.channel() has slug, name and avatarUrl).
-  function onFavourite() {}
+  /** Adds or removes the Favourite of the Channel playing (yellow key or the Info Bar button). */
+  function onFavourite(): boolean {
+    const ch = session.channel();
+    if (!ch) return false;
+    app.toggleFavourite({ slug: ch.slug, name: ch.name, avatarUrl: ch.avatarUrl });
+    return true;
+  }
 
   // Show or hide the Chat Overlay (the green key does the same).
   function onChat() {
@@ -150,6 +156,9 @@ export function Playback({ slug }: { slug: string }) {
       case 'stop':
         app.back();
         return true;
+      case 'yellow':
+        onFavourite();
+        return true;
       default:
         return false;
     }
@@ -173,6 +182,7 @@ export function Playback({ slug }: { slug: string }) {
           channel={channel}
           focusOn={focusOn}
           onFavourite={onFavourite}
+          favourite={favourites.has(channel.slug)}
           onChat={onChat}
           chatOpen={chat.open}
           onQuality={openQualityList}

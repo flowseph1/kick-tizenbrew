@@ -6,7 +6,7 @@ See `.scratch/kick-module/spec.md` (Favourites and Watch Count, Home) and `GLOSS
 
 **Blocked by:** 05
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] Yellow key and the `Favourite` button add and remove a Favourite, with visible feedback.
 - [ ] The Favourites row is hidden when there are no Favourites.
@@ -16,3 +16,7 @@ See `.scratch/kick-module/spec.md` (Favourites and Watch Count, Home) and `GLOSS
 - [ ] Live status refreshes every 60 s on Home.
 - [ ] Favourites survive a restart of the Module; a storage failure does not crash it.
 - [ ] Vitest covers ordering and Watch Count rules.
+
+## Verification
+
+Integrated with Chat on kick-module-v1. All 210 tests, typecheck, build and syntax checks pass. App tests cover Favourites and store rules. TV remote behaviour and persistence on a real TV remain unverified; acceptance boxes remain open for hardware verification.
