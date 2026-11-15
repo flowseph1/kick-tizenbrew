@@ -6,7 +6,7 @@ See `.scratch/kick-module/spec.md` (Search).
 
 **Blocked by:** 08
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] `Search` in the top bar opens the input and the on screen keyboard on the TV.
 - [x] The search runs 400 ms after the last key press.
