@@ -1,6 +1,6 @@
 // The one adapter between the unofficial kick.com API and our own types.
 // Endpoints are recorded in `.scratch/kick-module/spec.md` (Data source).
-import type { Category, KickApi, Livestream } from './types';
+import type { Category, Channel, KickApi, Livestream } from './types';
 
 export const KICK_BASE = 'https://kick.com';
 const TOP_LIMIT = 24;
@@ -61,6 +61,40 @@ export function mapStreamListItem(raw: Json): Livestream {
   };
 }
 
+/** Maps `GET /api/v2/channels/{slug}`. Here the avatar is `user.profile_pic` (with an underscore). */
+export function mapChannel(raw: Json): Channel {
+  const user = raw.user || {};
+  const chatroom = raw.chatroom || {};
+  const slug = str(raw.slug);
+  const name = str(user.username) || slug;
+  const avatarUrl = str(user.profile_pic);
+  const ls = raw.livestream;
+  let livestream: Livestream | null = null;
+  if (ls && typeof ls === 'object') {
+    const categories = Array.isArray(ls.categories) ? ls.categories : [];
+    livestream = {
+      id: num(ls.id),
+      channelSlug: slug,
+      channelName: name,
+      channelAvatarUrl: avatarUrl,
+      title: str(ls.session_title),
+      viewerCount: num(ls.viewer_count),
+      isMature: ls.is_mature === true,
+      thumbnailUrl: str((ls.thumbnail || {}).url),
+      category: mapCategory(categories[0]),
+    };
+  }
+  return {
+    id: num(raw.id),
+    slug,
+    name,
+    avatarUrl,
+    chatroomId: num(chatroom.id),
+    playbackUrl: str(raw.playback_url),
+    livestream,
+  };
+}
+
 export function createKickApi(fetchFn: FetchLike, base: string = KICK_BASE): KickApi {
   async function getJson(path: string): Promise<Json> {
     let res;
@@ -86,6 +120,11 @@ export function createKickApi(fetchFn: FetchLike, base: string = KICK_BASE): Kic
   return {
     topLivestreams() {
       return streamList('limit=' + TOP_LIMIT + '&sort=desc&page=1');
+    },
+    async channel(slug) {
+      const body = await getJson('/api/v2/channels/' + encodeURIComponent(slug));
+      if (!body || typeof body !== 'object' || !body.slug) throw new KickApiError('Unexpected Channel shape', 200);
+      return mapChannel(body);
     },
   };
 }
