@@ -4,6 +4,7 @@ import type { KickApi } from '../api/types';
 import type { Translate } from '../i18n/strings';
 import type { Action } from '../nav/keys';
 import type { FocusManager } from '../nav/focus';
+import type { PlaybackDeps } from '../player/deps';
 import type { Route } from './routes';
 
 /** Returns true when the screen handled the action, so the App skips its default. */
@@ -14,6 +15,8 @@ export interface AppServices {
   t: Translate;
   now: () => number;
   focus: FocusManager;
+  /** What the Playback screen needs to make a player (real ones from main.tsx, fakes in tests). */
+  playback: PlaybackDeps;
   /** Opens a screen on top of the current one. */
   push(route: Route): void;
   /** Returns to the previous screen. */

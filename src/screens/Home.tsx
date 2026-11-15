@@ -36,7 +36,13 @@ export function Home() {
           {top.value.length === 0 ? (
             <p class="status">{t('home.empty')}</p>
           ) : (
-            top.value.map((ls) => <LivestreamTile key={ls.id} livestream={ls} />)
+            top.value.map((ls) => (
+              <LivestreamTile
+                key={ls.id}
+                livestream={ls}
+                onSelect={() => app.push({ name: 'playback', slug: ls.channelSlug })}
+              />
+            ))
           )}
         </Row>
       )}

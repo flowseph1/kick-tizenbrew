@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { KickApi } from '../api/types';
 import type { Translate } from '../i18n/strings';
+import type { PlaybackDeps } from '../player/deps';
 import { FocusManager } from '../nav/focus';
 import { isDirection, toAction } from '../nav/keys';
 import { AppContext, type ActionHandler, type AppServices } from './context';
@@ -11,6 +12,7 @@ export interface AppProps {
   api: KickApi;
   t: Translate;
   exit: () => void;
+  playback: PlaybackDeps;
   now?: () => number;
 }
 
@@ -19,7 +21,7 @@ function isTextInput(target: EventTarget | null): boolean {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
 }
 
-export function App({ api, t, exit, now = Date.now }: AppProps) {
+export function App({ api, t, exit, playback, now = Date.now }: AppProps) {
   const [stack, setStack] = useState<Route[]>([{ name: 'home' }]);
   const [toast, setToast] = useState<string | null>(null);
   const screenRef = useRef<HTMLDivElement>(null);
@@ -38,6 +40,7 @@ export function App({ api, t, exit, now = Date.now }: AppProps) {
       t,
       now,
       focus,
+      playback,
       screenHandler,
       push: (route) => setStack((s) => s.concat([route])),
       back: () => {
@@ -51,7 +54,7 @@ export function App({ api, t, exit, now = Date.now }: AppProps) {
         toastTimer.current = window.setTimeout(() => setToast(null), ms);
       },
     };
-  }, [api, t, now]);
+  }, [api, t, now, playback]);
 
   // Keep focus valid whenever the screen content changes (loading, error, data).
   useEffect(() => {
