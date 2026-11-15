@@ -55,6 +55,9 @@ All API responses map into our own types in one adapter module. The UI never rea
   - The page waits for `/ping` (up to about 6 s) before the first proxied open, because TizenBrew starts the service after the page.
 - Desktop development: `npm run dev` runs the same proxy code on `127.0.0.1:8093`.
 - Quality: Auto by default. The `Quality` list shows the variants from the master playlist (for example 1080p60, 720p60, 480p30, 360p30, 160p30). If the TV cannot switch variants in place, reopen the stream at the chosen variant. The choice is not remembered; every Livestream starts at Auto.
+  - The list (`src/player/quality.ts`): the page fetches the Channel again (fresh `?token=`) and reads the master through the proxy (`/master.m3u8?u=`, not rewritten). Labels come from `RESOLUTION` height and `FRAME-RATE` (Kick names its 480p30 variant "480p"), best first, with Auto added first by the UI.
+  - **Decision (ticket 05): hls.js switches in place, AVPlay reopens.** `Player.setQuality()` returns whether the player switched in place. `HlsJsPlayer` sets `hls.currentLevel` (`-1` = Auto), matching the level by `BANDWIDTH`, else by height (hls.js sorts levels by bitrate). Verified in desktop Chrome against live Kick: the video goes to 720p with no new master load. `AvPlayPlayer` cannot (Samsung documents no in place HLS variant switch; `ADAPTIVE_INFO` only applies before prepare), so the session reopens AVPlay at the variant's media playlist (`chooseVariantUrl`: through `/media.m3u8?u=` on Tizen 5.x, direct on Tizen 6+), and Auto reopens the master with a fresh token. Confirm on the TV that AVPlay plays a variant media playlist and that the reopen is quick enough.
+  - On a reconnect, hls.js keeps the chosen Quality. AVPlay reopens the master, so the Quality returns to Auto.
 
 ## Screens
 
@@ -80,7 +83,7 @@ A grid of the Livestreams in that Category, sorted by viewers. Back returns to H
 ### Playback
 
 - The Livestream plays full screen.
-- OK shows the Info Bar for 5 s: Channel name, title, Category, viewer count. Below it: `Favourite`, `Chat`, `Quality` buttons. Focus moves to the buttons. The Info Bar hides after 5 s with no key press.
+- OK shows the Info Bar for 5 s: Channel name, title, Category, viewer count. Below it: `Favourite`, `Chat`, `Quality` buttons. Focus moves to the buttons. The Info Bar hides after 5 s with no key press. `Quality` shows the Quality list in place of the buttons (Auto, then the variants); focus starts on the Quality in use. Back closes the Quality list, then the Info Bar, before it leaves playback.
 - Green key: show or hide the Chat Overlay.
 - Yellow key: add or remove the Favourite (also on any Livestream or Channel tile outside playback).
 - Media keys: Play, Pause and PlayPause control the player. Stop returns to the previous screen.
@@ -118,7 +121,7 @@ It applies to Top Livestreams, Categories, the Category screen and Search. It do
 
 - Spatial navigation with arrows and OK on every screen. Focus is always visible.
 - Back key:
-  - Playback: close the Chat Overlay if it is open, else return to the previous screen.
+  - Playback: close the Quality list, else the Info Bar, else the Chat Overlay if it is open, else return to the previous screen.
   - Category, Search, Settings: return to Home.
   - Home: show "Press Back again to exit". A second Back within 2 s exits to TizenBrew.
 
