@@ -1,0 +1,20 @@
+{
+  "name": "kick-tizenbrew",
+  "appName": "Kick",
+  "version": "0.0.1",
+  "description": "Watch Kick on Samsung Tizen TVs through TizenBrew. Not affiliated with Kick.",
+  "packageType": "mods",
+  "websiteURL": "https://tizen.kick.com",
+  "main": "spike/probe.js",
+  "keys": [
+    "ColorF0Red",
+    "ColorF1Green",
+    "ColorF2Yellow",
+    "ColorF3Blue",
+    "MediaPlayPause",
+    "MediaPlay",
+    "MediaPause",
+    "MediaStop"
+  ],
+  "license": "MIT"
+}
