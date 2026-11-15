@@ -37,6 +37,23 @@ export interface Channel {
   followerCount: number;
 }
 
+/**
+ * A Channel as `GET /api/v2/channels/{slug}` gives it: what playback and chat need.
+ * (`Channel` is the lighter search result shape.)
+ */
+export interface ChannelDetail {
+  id: number;
+  slug: string;
+  name: string;
+  avatarUrl: string;
+  /** Chat: Pusher channel `chatrooms.{chatroomId}.v2`. */
+  chatroomId: number;
+  /** Master playlist with a `?token=` that expires about 10 min later: fetch the Channel again before each open. */
+  playbackUrl: string;
+  /** Null when the Channel is offline. */
+  livestream: Livestream | null;
+}
+
 export interface SearchResults {
   channels: Channel[];
   /** Unfiltered: the Content Filter (ticket 11) reads `isMature`, `parentSlug` and `tags`. */
@@ -46,6 +63,8 @@ export interface SearchResults {
 /** Everything the Module reads from Kick. Later tickets add methods here. */
 export interface KickApi {
   topLivestreams(): Promise<Livestream[]>;
+  /** The Channel with its playback URL, chatroom id and current Livestream (null when offline). */
+  channel(slug: string): Promise<ChannelDetail>;
   /** The top Categories for the Home Categories row. */
   topCategories(): Promise<Category[]>;
   /** The Livestreams in one Category (by slug), most viewers first. */

@@ -4,6 +4,7 @@ import type { KickApi } from '../api/types';
 import type { Translate } from '../i18n/strings';
 import type { Action } from '../nav/keys';
 import type { FocusManager } from '../nav/focus';
+import type { PlaybackDeps } from '../player/deps';
 import type { SettingKey, Settings } from '../settings/settings';
 import type { Route } from './routes';
 
@@ -15,6 +16,8 @@ export interface AppServices {
   t: Translate;
   now: () => number;
   focus: FocusManager;
+  /** What the Playback screen needs to make a player (real ones from main.tsx, fakes in tests). */
+  playback: PlaybackDeps;
   /** The Viewer's current settings. Screens re-render when one changes. */
   settings: Settings;
   /** Changes a setting and saves it on the TV (in memory only if storage fails). */

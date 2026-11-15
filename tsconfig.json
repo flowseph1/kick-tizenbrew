@@ -13,5 +13,7 @@
     "skipLibCheck": true,
     "types": []
   },
-  "include": ["src", "test"]
+  "include": ["src", "test"],
+  "//": "The service tests run in Node; the browser program has no Node types (types: []).",
+  "exclude": ["src/service"]
 }

@@ -2,8 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'preact';
 import { App } from './App';
+import type { Player, PlayerEvent } from '../player/types';
+import { PROXY_BASE } from '../player/route';
 import { createSettingsStore, type KeyValueStorage } from '../settings/settings';
-import type { Category, Channel, KickApi, Livestream } from '../api/types';
+import type { Category, Channel, ChannelDetail, KickApi, Livestream } from '../api/types';
 import pkg from '../../package.json';
 
 function stream(n: number, extra: Partial<Livestream> = {}): Livestream {
@@ -43,6 +45,35 @@ function press(key: string) {
   window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
 }
 
+/** A TV remote key, by Tizen key code (media keys have no desktop key). */
+function pressCode(keyCode: number) {
+  const e = new KeyboardEvent('keydown', { bubbles: true });
+  Object.defineProperty(e, 'keyCode', { value: keyCode });
+  window.dispatchEvent(e);
+}
+
+class FakePlayer implements Player {
+  readonly engine = 'hlsjs' as const;
+  opened: string[] = [];
+  calls: string[] = [];
+  closed = false;
+  constructor(public emit: (e: PlayerEvent) => void) {}
+  open(url: string) {
+    this.opened.push(url);
+  }
+  play() {
+    this.calls.push('play');
+  }
+  pause() {
+    this.calls.push('pause');
+  }
+  close() {
+    this.closed = true;
+  }
+}
+
+let players: FakePlayer[];
+
 async function until(check: () => boolean) {
   for (let i = 0; i < 50; i++) {
     if (check()) return;
@@ -75,10 +106,29 @@ function mount(api: Partial<KickApi>, tvLanguage = 'en-US') {
     categoryLivestreams: async () => [],
     search: async () => ({ channels: [], categories: [] }),
     channelLivestream: async () => null,
+    channel: async () => {
+      throw new Error('channel() not faked');
+    },
     ...api,
   };
+  const playback = {
+    tizen: null,
+    createPlayer: (emit: (e: PlayerEvent) => void) => {
+      const p = new FakePlayer(emit);
+      players.push(p);
+      return p;
+    },
+    proxyReady: async () => true,
+  };
   render(
-    <App api={full} settings={createSettingsStore(storage)} tvLanguage={tvLanguage} exit={exit} now={() => now} />,
+    <App
+      api={full}
+      settings={createSettingsStore(storage)}
+      tvLanguage={tvLanguage}
+      exit={exit}
+      now={() => now}
+      playback={playback}
+    />,
     root,
   );
 }
@@ -101,6 +151,7 @@ beforeEach(() => {
   document.body.appendChild(root);
   exit = vi.fn<() => void>();
   now = 10_000;
+  players = [];
   storage = memoryStorage();
   // happy-dom has no layout. Lay focusables out left to right in document order.
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
@@ -114,6 +165,7 @@ afterEach(() => {
   render(null, root);
   root.remove();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe('Home', () => {
@@ -184,6 +236,123 @@ describe('Home', () => {
     now += 2500;
     press('Escape');
     expect(exit).not.toHaveBeenCalled();
+  });
+});
+
+function channelFor(ls: Livestream | null, slug = 'chan1'): ChannelDetail {
+  return {
+    id: 1,
+    slug,
+    name: 'Channel 1',
+    avatarUrl: '',
+    chatroomId: 11,
+    playbackUrl: 'https://x.playback.live-video.net/api/video/v1/' + slug + '.m3u8?token=t',
+    livestream: ls,
+  };
+}
+
+describe('Playback', () => {
+  async function openFirstTile(api: Partial<KickApi> = {}) {
+    const asked: string[] = [];
+    mount({
+      topLivestreams: async () => [stream(1), stream(2)],
+      channel: async (slug) => {
+        asked.push(slug);
+        return channelFor(stream(1), slug);
+      },
+      ...api,
+    });
+    await until(() => root.querySelectorAll('.tile').length === 2);
+    await until(() => focusedText() !== null);
+    press('Enter');
+    await until(() => players.length === 1 && players[0].opened.length === 1);
+    return asked;
+  }
+
+  it('OK on a Top Livestreams tile plays that Livestream full screen', async () => {
+    const asked = await openFirstTile();
+    expect(asked).toEqual(['chan1']);
+    expect(players[0].opened[0]).toBe(
+      PROXY_BASE + '/master.m3u8?u=' + encodeURIComponent('https://x.playback.live-video.net/api/video/v1/chan1.m3u8?token=t'),
+    );
+    expect(root.querySelector('.playback')).not.toBeNull();
+    expect(root.querySelectorAll('.tile')).toHaveLength(0);
+    expect(document.documentElement.classList.contains('playing')).toBe(true);
+  });
+
+  it('Pause, Play and PlayPause control the player', async () => {
+    await openFirstTile();
+    players[0].emit({ type: 'playing' });
+
+    pressCode(19); // MediaPause
+    await until(() => root.textContent!.includes('Paused'));
+    pressCode(415); // MediaPlay
+    await until(() => !root.textContent!.includes('Paused'));
+    pressCode(10252); // MediaPlayPause
+    pressCode(10252);
+    press(' '); // desktop PlayPause
+    expect(players[0].calls).toEqual(['pause', 'play', 'pause', 'play', 'pause']);
+  });
+
+  it('Back returns to the previous screen and closes the player', async () => {
+    await openFirstTile();
+    players[0].emit({ type: 'playing' });
+    press('Escape');
+    await until(() => root.querySelectorAll('.tile').length === 2);
+    expect(players[0].closed).toBe(true);
+    expect(exit).not.toHaveBeenCalled();
+    expect(document.documentElement.classList.contains('playing')).toBe(false);
+  });
+
+  it('Stop returns to the previous screen', async () => {
+    await openFirstTile();
+    pressCode(413); // MediaStop
+    await until(() => root.querySelectorAll('.tile').length === 2);
+    expect(players[0].closed).toBe(true);
+  });
+
+  it('shows "Livestream ended" for 5 s when the Livestream ends, then returns', async () => {
+    await openFirstTile();
+    players[0].emit({ type: 'playing' });
+    vi.useFakeTimers();
+    players[0].emit({ type: 'ended' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(root.textContent).toContain('Livestream ended');
+
+    await vi.advanceTimersByTimeAsync(4900);
+    expect(root.querySelector('.playback')).not.toBeNull();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(root.querySelector('.playback')).toBeNull();
+    // Preact runs effects after a frame: let the faked frame timers fire so Home loads again.
+    await vi.advanceTimersByTimeAsync(200);
+    expect(root.querySelectorAll('.tile')).toHaveLength(2);
+  });
+
+  it('a dropped network shows Reconnecting, and after 30 s the error screen with Retry', async () => {
+    let down = false;
+    await openFirstTile({
+      channel: async (slug) => {
+        if (down) throw new Error('offline');
+        return channelFor(stream(1), slug);
+      },
+    });
+    players[0].emit({ type: 'playing' });
+    vi.useFakeTimers();
+    down = true;
+    players[0].emit({ type: 'error', detail: 'networkError' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(root.textContent).toContain('Reconnecting');
+
+    await vi.advanceTimersByTimeAsync(30000);
+    expect(root.textContent).toContain('Could not reach Kick');
+    await vi.advanceTimersByTimeAsync(200);
+    vi.useRealTimers();
+    await until(() => focusedText() === 'Retry');
+
+    down = false;
+    press('Enter');
+    await until(() => players.length === 2 && players[1].opened.length === 1);
+    expect(root.textContent).not.toContain('Could not reach Kick');
   });
 });
 
