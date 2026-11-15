@@ -26,11 +26,12 @@ Not verified, so the boxes stay unchecked:
 - The layout was not viewed on the TV or in desktop Chrome.
 
 Other changes:
-- Home's top bar has a `Search` button. The first Top Livestreams tile is `data-autofocus`, and `FocusManager.ensure()` now lets an autofocus element take over a fallback pick (focus went to Search while the rows loaded) until the Viewer moves focus.
+- Home's top bar has `Search` before `Settings` (ticket 10). Ticket 10 merged first with the same focus fix (the first Top Livestreams tile is `data-autofocus` and takes over from a top bar fallback pick); the merge keeps ticket 10's `FocusManager`.
+- Ticket 10 merged first with the `es` table and a completeness test, so the merge also adds `es` text for the `search.*` keys ("Buscar", "Canales", "Desconectado", ...). Ticket 10 may want to review the wording.
 - The App no longer treats Backspace in a text input as Back (desktop only; Escape still goes Back).
 
 ### Notes for later tickets
 
 - Content Filter (11): `SearchResults.categories` are full, unfiltered `Category` objects (`isMature`, `parentSlug`, `tags`), so `slots` maps to `parentSlug: 'gambling'`, `tags: ['Gambling']`, `isMature: true`. Search `Channel`s carry no mature flag; the mature flag is on the `Livestream` that `channelLivestream()` returns (`isMature`). Filter in `src/screens/Search.tsx` (the `Results` component), not in the adapter.
 - Playback (03): if 03 adds its own Channel fetch for the playback URL, it can reuse or replace `channelLivestream` / `mapChannelLivestream` in `src/api/kick.ts`.
-- Spanish (10): new `en` keys are `search.*`.
+- Strings: the new keys are `search.*`.
