@@ -2,7 +2,7 @@
 // - The Livestream ends (player end, or the Channel is offline): "ended" for 5 s, then onDone().
 // - The network drops: reconnect (fresh Channel and token, reopen) every few seconds for up to 30 s,
 //   then "error". The UI shows the error screen; its Retry calls start() again.
-import type { Channel, KickApi } from '../api/types';
+import type { ChannelDetail, KickApi } from '../api/types';
 import { choosePlaylistUrl, PROXY_BASE, type TizenVersion } from './route';
 import type { Player, PlayerEvent, PlayerFactory } from './types';
 
@@ -37,7 +37,7 @@ export interface PlaybackSession {
   /** Leaves playback: closes the player and cancels every timer. */
   stop(): void;
   /** The Channel being played, once fetched: name, chatroom id and Livestream for the Info Bar (05) and chat (07). */
-  channel(): Channel | null;
+  channel(): ChannelDetail | null;
   /** The player in use, for Quality changes (ticket 05). */
   player(): Player | null;
 }
@@ -45,7 +45,7 @@ export interface PlaybackSession {
 export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
   let status: SessionStatus = 'loading';
   let current: Player | null = null;
-  let channel: Channel | null = null;
+  let channel: ChannelDetail | null = null;
   let run = 0;
   let proxyOk = false;
   let endedTimer: ReturnType<typeof setTimeout> | undefined;

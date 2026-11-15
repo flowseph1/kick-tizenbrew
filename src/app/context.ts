@@ -5,6 +5,7 @@ import type { Translate } from '../i18n/strings';
 import type { Action } from '../nav/keys';
 import type { FocusManager } from '../nav/focus';
 import type { PlaybackDeps } from '../player/deps';
+import type { SettingKey, Settings } from '../settings/settings';
 import type { Route } from './routes';
 
 /** Returns true when the screen handled the action, so the App skips its default. */
@@ -17,6 +18,10 @@ export interface AppServices {
   focus: FocusManager;
   /** What the Playback screen needs to make a player (real ones from main.tsx, fakes in tests). */
   playback: PlaybackDeps;
+  /** The Viewer's current settings. Screens re-render when one changes. */
+  settings: Settings;
+  /** Changes a setting and saves it on the TV (in memory only if storage fails). */
+  setSetting<K extends SettingKey>(key: K, value: Settings[K]): void;
   /** Opens a screen on top of the current one. */
   push(route: Route): void;
   /** Returns to the previous screen. */

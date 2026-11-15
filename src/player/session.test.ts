@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Channel, KickApi, Livestream } from '../api/types';
+import type { ChannelDetail, KickApi, Livestream } from '../api/types';
 import { PROXY_BASE } from './route';
 import { createPlaybackSession, ENDED_MS, RECONNECT_MS, type SessionState } from './session';
 import type { Player, PlayerEvent } from './types';
@@ -18,7 +18,7 @@ const livestream: Livestream = {
   category: null,
 };
 
-function channel(live: boolean, token = 't1'): Channel {
+function channel(live: boolean, token = 't1'): ChannelDetail {
   return {
     id: 668,
     slug: 'xqc',
@@ -58,7 +58,14 @@ let done: ReturnType<typeof vi.fn<() => void>>;
 function setup(channelFn: KickApi['channel'], proxyReady: () => Promise<boolean> = async () => true) {
   states = [];
   done = vi.fn<() => void>();
-  const api: KickApi = { topLivestreams: async () => [], channel: channelFn };
+  const api: KickApi = {
+    topLivestreams: async () => [],
+    topCategories: async () => [],
+    categoryLivestreams: async () => [],
+    search: async () => ({ channels: [], categories: [] }),
+    channelLivestream: async () => null,
+    channel: channelFn,
+  };
   const session = createPlaybackSession({
     api,
     slug: 'xqc',

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { KickApi } from '../api/types';
-import type { Translate } from '../i18n/strings';
+import { createTranslator, resolveLanguage } from '../i18n/strings';
 import type { PlaybackDeps } from '../player/deps';
+import type { Settings, SettingsStore } from '../settings/settings';
 import { FocusManager } from '../nav/focus';
 import { isDirection, toAction } from '../nav/keys';
 import { AppContext, type ActionHandler, type AppServices } from './context';
@@ -10,7 +11,9 @@ import { renderScreen } from './screens';
 
 export interface AppProps {
   api: KickApi;
-  t: Translate;
+  settings: SettingsStore;
+  /** The TV language, for example `es-ES`. Language Auto follows it. */
+  tvLanguage: string;
   exit: () => void;
   playback: PlaybackDeps;
   now?: () => number;
@@ -21,7 +24,18 @@ function isTextInput(target: EventTarget | null): boolean {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
 }
 
-export function App({ api, t, exit, playback, now = Date.now }: AppProps) {
+export function App({ api, settings: store, tvLanguage, exit, playback, now = Date.now }: AppProps) {
+  const [settings, setSettings] = useState<Settings>(() => store.get());
+  useEffect(() => {
+    setSettings(store.get());
+    return store.subscribe(setSettings);
+  }, [store]);
+  const language = resolveLanguage(settings.language, tvLanguage);
+  const t = useMemo(() => createTranslator(language), [language]);
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
+
   const [stack, setStack] = useState<Route[]>([{ name: 'home' }]);
   const [toast, setToast] = useState<string | null>(null);
   const screenRef = useRef<HTMLDivElement>(null);
@@ -33,14 +47,20 @@ export function App({ api, t, exit, playback, now = Date.now }: AppProps) {
   const exitRef = useRef(exit);
   exitRef.current = exit;
 
+  // One FocusManager for the App's life, so a language change keeps focus where it is.
+  const focusRef = useRef<FocusManager | null>(null);
+  if (!focusRef.current) focusRef.current = new FocusManager(() => screenRef.current);
+
   const services = useMemo<AppServices>(() => {
-    const focus = new FocusManager(() => screenRef.current);
+    const focus = focusRef.current!;
     return {
       api,
       t,
       now,
       focus,
       playback,
+      settings,
+      setSetting: (key, value) => store.set(key, value),
       screenHandler,
       push: (route) => setStack((s) => s.concat([route])),
       back: () => {
@@ -54,7 +74,7 @@ export function App({ api, t, exit, playback, now = Date.now }: AppProps) {
         toastTimer.current = window.setTimeout(() => setToast(null), ms);
       },
     };
-  }, [api, t, now, playback]);
+  }, [api, t, now, settings, store, playback]);
 
   // Keep focus valid whenever the screen content changes (loading, error, data).
   useEffect(() => {
@@ -68,7 +88,8 @@ export function App({ api, t, exit, playback, now = Date.now }: AppProps) {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (isTextInput(e.target) && e.key && e.key.length === 1) return;
+      // Desktop: letters and Backspace edit the input. On the TV the Samsung keyboard takes the keys.
+      if (isTextInput(e.target) && e.key && (e.key.length === 1 || e.key === 'Backspace')) return;
       const action = toAction(e);
       if (!action) return;
       e.preventDefault();

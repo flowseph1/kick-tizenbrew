@@ -1,9 +1,11 @@
 // The one adapter between the unofficial kick.com API and our own types.
 // Endpoints are recorded in `.scratch/kick-module/spec.md` (Data source).
-import type { Category, Channel, KickApi, Livestream } from './types';
+import type { Category, Channel, ChannelDetail, KickApi, Livestream } from './types';
 
 export const KICK_BASE = 'https://kick.com';
 const TOP_LIMIT = 24;
+/** Kick caps `limit` at 32 on `/stream/livestreams`. */
+const CATEGORY_LIMIT = 32;
 
 /** The subset of `fetch` the adapter needs, so tests can pass a fake. */
 export type FetchLike = (url: string) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
@@ -29,9 +31,12 @@ function num(v: unknown): number {
   return typeof v === 'number' && isFinite(v) ? v : 0;
 }
 
+/** Maps a Kick subcategory (our Category) from lists, Livestreams, `categories/top`, `subcategories` or search. */
 export function mapCategory(raw: Json | null | undefined): Category | null {
   if (!raw || typeof raw !== 'object') return null;
   const parent = raw.category || {};
+  // `categories/top` and search send banner.src; `subcategories` sends banner.url.
+  const banner = raw.banner || {};
   return {
     id: num(raw.id),
     slug: str(raw.slug),
@@ -39,6 +44,8 @@ export function mapCategory(raw: Json | null | undefined): Category | null {
     parentSlug: str(parent.slug),
     isMature: raw.is_mature === true,
     tags: Array.isArray(raw.tags) ? raw.tags.filter((t: unknown) => typeof t === 'string') : [],
+    viewerCount: num(raw.viewers),
+    bannerUrl: str(banner.src) || str(banner.url),
   };
 }
 
@@ -61,38 +68,57 @@ export function mapStreamListItem(raw: Json): Livestream {
   };
 }
 
+/** Maps one item of `channels` in `GET /api/search`. Search uses camelCase `isLive` and `profilePic`. */
+export function mapSearchChannel(raw: Json): Channel {
+  const user = raw.user || {};
+  return {
+    id: num(raw.id),
+    slug: str(raw.slug),
+    name: str(user.username) || str(raw.slug),
+    avatarUrl: str(user.profilePic),
+    isLive: raw.isLive === true,
+    followerCount: num(raw.followers_count),
+  };
+}
+
+/** Maps `livestream` of `GET /api/v2/channels/{slug}`, or null when the Channel is offline. */
+export function mapChannelLivestream(raw: Json): Livestream | null {
+  const ls = raw.livestream;
+  if (!ls || typeof ls !== 'object') return null;
+  const user = raw.user || {};
+  const thumb = ls.thumbnail || {};
+  const categories = Array.isArray(ls.categories) ? ls.categories : [];
+  return {
+    id: num(ls.id),
+    channelSlug: str(raw.slug),
+    channelName: str(user.username) || str(raw.slug),
+    channelAvatarUrl: str(user.profile_pic),
+    title: str(ls.session_title),
+    viewerCount: num(ls.viewer_count),
+    isMature: ls.is_mature === true,
+    thumbnailUrl: str(thumb.url) || str(thumb.src),
+    category: mapCategory(categories[0]),
+  };
+}
+
 /** Maps `GET /api/v2/channels/{slug}`. Here the avatar is `user.profile_pic` (with an underscore). */
-export function mapChannel(raw: Json): Channel {
+export function mapChannelDetail(raw: Json): ChannelDetail {
   const user = raw.user || {};
   const chatroom = raw.chatroom || {};
   const slug = str(raw.slug);
-  const name = str(user.username) || slug;
-  const avatarUrl = str(user.profile_pic);
-  const ls = raw.livestream;
-  let livestream: Livestream | null = null;
-  if (ls && typeof ls === 'object') {
-    const categories = Array.isArray(ls.categories) ? ls.categories : [];
-    livestream = {
-      id: num(ls.id),
-      channelSlug: slug,
-      channelName: name,
-      channelAvatarUrl: avatarUrl,
-      title: str(ls.session_title),
-      viewerCount: num(ls.viewer_count),
-      isMature: ls.is_mature === true,
-      thumbnailUrl: str((ls.thumbnail || {}).url),
-      category: mapCategory(categories[0]),
-    };
-  }
   return {
     id: num(raw.id),
     slug,
-    name,
-    avatarUrl,
+    name: str(user.username) || slug,
+    avatarUrl: str(user.profile_pic),
     chatroomId: num(chatroom.id),
     playbackUrl: str(raw.playback_url),
-    livestream,
+    livestream: mapChannelLivestream(raw),
   };
+}
+
+function list(v: unknown): Json[] {
+  return Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : [];
 }
 
 export function createKickApi(fetchFn: FetchLike, base: string = KICK_BASE): KickApi {
@@ -124,7 +150,28 @@ export function createKickApi(fetchFn: FetchLike, base: string = KICK_BASE): Kic
     async channel(slug) {
       const body = await getJson('/api/v2/channels/' + encodeURIComponent(slug));
       if (!body || typeof body !== 'object' || !body.slug) throw new KickApiError('Unexpected Channel shape', 200);
-      return mapChannel(body);
+      return mapChannelDetail(body);
+    },
+    async topCategories() {
+      const body = await getJson('/api/v1/categories/top');
+      if (!Array.isArray(body)) throw new KickApiError('Unexpected Category list shape', 200);
+      return body.map(mapCategory).filter((c): c is Category => c !== null);
+    },
+    categoryLivestreams(slug) {
+      return streamList('limit=' + CATEGORY_LIMIT + '&sort=desc&page=1&subcategory=' + encodeURIComponent(slug));
+    },
+    async search(word) {
+      // `livestreams` in the answer is always `{tags: []}`; ignore it.
+      const body = await getJson('/api/search?searched_word=' + encodeURIComponent(word));
+      return {
+        channels: list(body && body.channels).map(mapSearchChannel),
+        categories: list(body && body.categories)
+          .map(mapCategory)
+          .filter((c): c is Category => c !== null),
+      };
+    },
+    async channelLivestream(slug) {
+      return mapChannelLivestream(await getJson('/api/v2/channels/' + encodeURIComponent(slug)));
     },
   };
 }

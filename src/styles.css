@@ -228,3 +228,188 @@ html.playing body {
 .playback-ended {
   background: var(--bg);
 }
+
+.screen-title {
+  margin: 0;
+  font-size: 48px;
+  font-weight: 800;
+}
+
+/* Category art from Kick is portrait (3:4). */
+.category-tile {
+  flex: 0 0 200px;
+  width: 200px;
+  margin-right: 28px;
+  border-radius: 12px;
+  background: var(--panel);
+  overflow: hidden;
+  outline: 4px solid transparent;
+  transition: transform 120ms ease-out, outline-color 120ms ease-out;
+}
+
+.category-art {
+  position: relative;
+  width: 100%;
+  padding-top: 133.33%;
+  background: #000;
+}
+
+.category-art img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.category-name {
+  padding: 12px 14px 14px;
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Four Livestream tiles per row at 1920 wide; margins instead of `gap`. */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 12px 12px 0;
+  margin: 0 -12px;
+}
+
+.grid .tile {
+  margin: 0 28px 32px 0;
+}
+
+.grid .tile:nth-child(4n) {
+  margin-right: 0;
+}
+
+.top-bar-actions {
+  margin-left: auto;
+}
+
+.top-bar-button {
+  min-width: 0;
+  padding: 12px 32px;
+}
+
+.settings .screen-title {
+  margin-bottom: 48px;
+}
+
+.settings-row {
+  margin-bottom: 48px;
+}
+
+.settings-label {
+  margin: 0 0 20px;
+  font-size: 36px;
+}
+
+.settings-options {
+  display: flex;
+}
+
+.option {
+  margin-right: 24px;
+  border: 3px solid transparent;
+}
+
+.option.selected {
+  border-color: var(--accent);
+}
+
+.settings-about {
+  margin-top: 96px;
+  color: var(--muted);
+}
+
+.settings-about p {
+  margin: 0 0 12px;
+}
+
+.top-bar-button + .top-bar-button {
+  margin-left: 24px;
+}
+
+.search-input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 40px;
+  padding: 18px 28px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 34px;
+  outline: 4px solid transparent;
+}
+
+.search-input.focused {
+  transform: none;
+}
+
+/* Search Channels have no thumbnail: a round picture, name, Live or Offline, followers. */
+.channel-tile {
+  flex: 0 0 260px;
+  width: 260px;
+  margin-right: 28px;
+  padding: 24px 16px 20px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: var(--panel);
+  text-align: center;
+  outline: 4px solid transparent;
+  transition: transform 120ms ease-out, outline-color 120ms ease-out;
+}
+
+.channel-tile.offline .channel-avatar,
+.channel-tile.offline .channel-name {
+  opacity: 0.5;
+}
+
+.channel-avatar {
+  width: 128px;
+  height: 128px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #000;
+}
+
+.channel-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.channel-name {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-meta {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 22px;
+}
+
+.badge-live {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+}
+
+.badge-offline {
+  font-weight: 700;
+}

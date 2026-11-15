@@ -34,9 +34,9 @@ Unofficial `https://kick.com/api` endpoints, called directly from the module (Ki
 |---|---|
 | Channel, Livestream, playback URL, chatroom id | `GET /api/v2/channels/{slug}` |
 | Top Livestreams | `GET https://kick.com/stream/livestreams/en?limit=24&sort=desc&page=1` (verified, CORS reflects our Origin). `sort=desc` orders by viewers; without it the order is newest first. `limit` max 32. The `/{lang}` segment is ignored (all languages). Laravel paginator: items in `data[]`. List items carry a tokenless `playback_url` that returns 403: fetch the Channel for playback. |
-| Top Categories | `GET /api/v1/categories/top` or `/api/v1/subcategories` |
-| Livestreams in a Category | find the endpoint kick.com uses |
-| Search | `GET /api/search?searched_word=...` |
+| Top Categories | `GET https://kick.com/api/v1/categories/top` (verified, CORS reflects our Origin). Plain array of subcategories (our Category): `slug`, `name`, `is_mature`, `viewers`, `tags[]`, `banner.src`, parent group in `category.slug` (for example `gambling`). `/api/v1/subcategories` is a paginated alternative whose banner is `banner.url`; the adapter reads both. |
+| Livestreams in a Category | `GET https://kick.com/stream/livestreams/en?limit=32&sort=desc&page=1&subcategory={slug}` (verified, CORS reflects our Origin). Same endpoint and item shape as Top Livestreams, filtered by the Category slug; `category=` and `subcategory_id=` are ignored. `web.kick.com/api/v1/livestreams?category_id=` also works but has no CORS for our Origin. |
+| Search | `GET https://kick.com/api/search?searched_word={word}` (verified, CORS reflects our Origin). `{channels[], categories[], livestreams}`. Channels (up to 20) use camelCase `isLive` and `user.profilePic`, and carry no title or viewers: the Module fetches `/api/v2/channels/{slug}` (verified, CORS reflects our Origin; `livestream` is null when offline) before it plays one. Categories have the `categories/top` shape (`banner.src`). `livestreams` is always `{tags: []}`; ignore it. |
 
 All API responses map into our own types in one adapter module. The UI never reads raw Kick JSON. The adapter has Vitest tests with recorded fixtures.
 
@@ -143,5 +143,4 @@ All UI text comes from one string table with `en` and `es`. "Auto" uses the TV l
 
 ## Open items
 
-- Exact endpoint for Category Livestreams (Top Livestreams is recorded in Data source).
 - Whether AVPlay can switch Quality in place, or must reopen the stream.

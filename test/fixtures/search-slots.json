@@ -1,0 +1,153 @@
+{
+  "channels": [
+    {
+      "id": 78665731,
+      "user_id": 79849296,
+      "slug": "degengambaslots",
+      "is_banned": false,
+      "playback_url": "https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/us-west-2.196233775518.channel.KIodib9eCt2t.m3u8",
+      "name_updated_at": null,
+      "vod_enabled": true,
+      "subscription_enabled": true,
+      "is_affiliate": true,
+      "followers_count": 42068,
+      "userId": 79849296,
+      "followersCount": 42068,
+      "following": false,
+      "subscription": false,
+      "isLive": false,
+      "recentCategories": [],
+      "can_host": true,
+      "user": {
+        "id": 79849296,
+        "username": "DegenGambaSlots",
+        "bio": "",
+        "club": null,
+        "profilePic": "https://files.kick.com/images/user/79849296/profile_image/conversion/2fefabc8-59fd-4ce3-a373-d591f5d62840-fullsize.webp"
+      },
+      "verified": null
+    },
+    {
+      "id": 46012257,
+      "user_id": 47122112,
+      "slug": "vikingslots",
+      "is_banned": false,
+      "playback_url": "https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/us-west-2.196233775518.channel.UW7soJG7Jr8Q.m3u8",
+      "name_updated_at": null,
+      "vod_enabled": true,
+      "subscription_enabled": true,
+      "is_affiliate": true,
+      "followers_count": 25020,
+      "userId": 47122112,
+      "followersCount": 25020,
+      "following": false,
+      "subscription": false,
+      "isLive": false,
+      "recentCategories": [],
+      "can_host": true,
+      "user": {
+        "id": 47122112,
+        "username": "vikingslots",
+        "bio": "Fulltime Degenerate Gambler┃LIVE 2 PM EST┃$20,000 BI-WEEKLY LEADERBOARD┃Use code: Viking",
+        "club": null,
+        "profilePic": "https://files.kick.com/images/user/47122112/profile_image/conversion/063775e2-03ed-4a39-9025-2306ffdefe63-fullsize.webp"
+      },
+      "verified": {
+        "id": 12751,
+        "channel_id": 46012257,
+        "created_at": "2025-06-10T20:42:05.000000Z",
+        "updated_at": "2025-06-10T20:42:05.000000Z"
+      }
+    },
+    {
+      "id": 1356298,
+      "user_id": 1400405,
+      "slug": "auslots",
+      "is_banned": false,
+      "playback_url": "https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/us-west-2.196233775518.channel.DKrvefMObbg2.m3u8",
+      "name_updated_at": null,
+      "vod_enabled": true,
+      "subscription_enabled": true,
+      "is_affiliate": false,
+      "followers_count": 22646,
+      "userId": 1400405,
+      "followersCount": 22646,
+      "following": false,
+      "subscription": false,
+      "isLive": false,
+      "recentCategories": [],
+      "can_host": true,
+      "user": {
+        "id": 1400405,
+        "username": "auslots",
+        "bio": "Massive bets, massive streams, massive casino deals. We give back chunks of money daily to the community, life is gold baby! We love you!",
+        "club": "",
+        "profilePic": "https://files.kick.com/images/user/1400405/profile_image/conversion/5e62335b-ec11-4127-bb7c-234e7440d4e1-fullsize.webp"
+      },
+      "verified": {
+        "id": 908,
+        "channel_id": 1356298,
+        "created_at": "2023-03-16T23:53:04.000000Z",
+        "updated_at": "2023-03-16T23:53:04.000000Z"
+      }
+    }
+  ],
+  "categories": [
+    {
+      "id": 28,
+      "category_id": 4,
+      "name": "Slots & Casino",
+      "slug": "slots",
+      "tags": [
+        "Gambling"
+      ],
+      "description": null,
+      "deleted_at": null,
+      "is_mature": true,
+      "viewers": 61427,
+      "is_fallback": false,
+      "banner": {
+        "srcset": "https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_408_408.webp 408w, https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_341_341.webp 341w, https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_285_285.webp 285w, https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_238_238.webp 238w, https://files.kick.com/images/subcategories/28/banner/responsives/f9233069-cfa7-4ae1-9b33-f2b9ca652fef___banner_199_199.webp 199w",
+        "src": "https://files.kick.com/images/subcategories/28/banner/conversion/f9233069-cfa7-4ae1-9b33-f2b9ca652fef-banner.webp"
+      },
+      "category": {
+        "id": 4,
+        "name": "Gambling",
+        "slug": "gambling",
+        "icon": "🎰"
+      }
+    },
+    {
+      "id": 7670,
+      "category_id": 4,
+      "name": "The Four Kings Casino and Slots",
+      "slug": "the-four-kings-casino-and-slots",
+      "tags": [
+        "card",
+        "simulator",
+        "casino",
+        "poker",
+        "blackjack",
+        "gambiling"
+      ],
+      "description": null,
+      "deleted_at": null,
+      "is_mature": true,
+      "viewers": 0,
+      "is_fallback": false,
+      "banner": {
+        "srcset": "https://files.kick.com/images/subcategories/7670/banner/responsives/a7695850-e4d7-428a-b9ea-34c90d9b0b6c___banner_285_380.webp 285w, https://files.kick.com/images/subcategories/7670/banner/responsives/a7695850-e4d7-428a-b9ea-34c90d9b0b6c___banner_238_317.webp 238w, https://files.kick.com/images/subcategories/7670/banner/responsives/a7695850-e4d7-428a-b9ea-34c90d9b0b6c___banner_199_265.webp 199w",
+        "src": "https://files.kick.com/images/subcategories/7670/banner/conversion/a7695850-e4d7-428a-b9ea-34c90d9b0b6c-banner.webp"
+      },
+      "category": {
+        "id": 4,
+        "name": "Gambling",
+        "slug": "gambling",
+        "icon": "🎰"
+      }
+    }
+  ],
+  "livestreams": {
+    "tags": []
+  }
+}
