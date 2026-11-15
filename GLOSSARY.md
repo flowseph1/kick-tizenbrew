@@ -32,6 +32,18 @@ _Avoid_: Parental control, safe mode
 A Channel the Viewer pinned on this TV. Favourites stay on the TV and replace a Kick "Following" list.
 _Avoid_: Follow, subscription, bookmark
 
+**Watch Count**:
+How many times a Livestream of a Favourite started to play on this TV. Only Favourites have one.
+_Avoid_: Views, plays, popularity
+
+**Info Bar**:
+The temporary strip over the video that shows the Livestream's Channel, title, Category and viewer count.
+_Avoid_: OSD, banner, HUD
+
+**Quality**:
+The video resolution and frame rate the Viewer picks for a Livestream, or Auto to let the player adapt.
+_Avoid_: Resolution, bitrate, rendition
+
 **Chat Overlay**:
 The read only view of a Livestream's chat, shown over the video and toggled with a remote key.
 _Avoid_: Chat panel, chat window

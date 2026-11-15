@@ -6,6 +6,7 @@
   "packageType": "mods",
   "websiteURL": "https://tizen.kick.com",
   "main": "spike/probe.js",
+  "evaluateScriptOnDocumentStart": true,
   "keys": [
     "ColorF0Red",
     "ColorF1Green",

@@ -8,6 +8,7 @@
   window.__kickProbe = true;
 
   var lines = [];
+  var header = [];
   var panel = null;
   var visible = true;
 
@@ -20,7 +21,7 @@
 
   function render() {
     if (!panel) return;
-    panel.textContent = 'KICK PROBE (blue key hides)\n' + lines.join('\n');
+    panel.textContent = 'KICK PROBE (blue key hides)\n' + header.join('\n') + '\n----\n' + lines.join('\n');
   }
 
   function mount() {
@@ -37,9 +38,11 @@
   }
 
   var chrome = navigator.userAgent.match(/Chrome\/(\d+)/);
+  var model = 'unknown';
+  try { model = window.webapis.productinfo.getRealModel(); } catch (e) {}
+  header.push('chromium: ' + (chrome ? chrome[1] : 'unknown') + ', model: ' + model);
+  header.push('tizen api: ' + (typeof window.tizen) + ', webapis: ' + (typeof window.webapis));
   log('url: ' + location.href);
-  log('chromium: ' + (chrome ? chrome[1] : 'unknown'));
-  log('tizen api: ' + (typeof window.tizen) + ', webapis: ' + (typeof window.webapis));
 
   var keyNames = { 403: 'RED', 404: 'GREEN', 405: 'YELLOW', 406: 'BLUE', 10252: 'PLAYPAUSE', 415: 'PLAY', 19: 'PAUSE', 413: 'STOP', 10009: 'BACK' };
   document.addEventListener('keydown', function (e) {
@@ -68,7 +71,7 @@
   }
 
   window.addEventListener('error', function (e) {
-    log('js error: ' + e.message);
+    log('js error: ' + e.message + (e.filename ? ' @' + e.filename.split('/').pop() : ''));
   });
 
   var lastUrl = location.href;
