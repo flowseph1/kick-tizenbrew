@@ -808,6 +808,57 @@ describe('Search', () => {
     expect(root.querySelector('h1')!.textContent).toBe('Cat slots');
   });
 
+  describe('with the Content Filter on', () => {
+    beforeEach(() => {
+      storage.setItem('kick.settings', JSON.stringify({ contentFilter: true }));
+    });
+
+    it('hides gambling Category results', async () => {
+      await openSearch({
+        search: async () => ({
+          channels: [],
+          categories: [category('slots', { parentSlug: 'gambling', tags: ['Gambling'] }), category('fortnite')],
+        }),
+      });
+      type('s');
+      await wait(400);
+      await until(() => root.querySelectorAll('.category-tile').length === 1);
+      expect(root.textContent).toContain('Cat fortnite');
+      expect(root.textContent).not.toContain('Cat slots');
+    });
+
+    it('says "No results" when the filter hid every result', async () => {
+      await openSearch({
+        search: async () => ({ channels: [], categories: [category('slots', { parentSlug: 'gambling' })] }),
+      });
+      type('slots');
+      await wait(400);
+      await until(() => root.textContent!.includes('No results for "slots"'));
+    });
+
+    it('does not play a live Channel whose Livestream is mature', async () => {
+      await searchAndMoveDown({
+        search: async () => ({ channels: [channel('xqc', { isLive: true })], categories: [] }),
+        channelLivestream: async (slug) => stream(1, { channelSlug: slug, isMature: true }),
+      });
+      press('Enter');
+      await until(() => root.querySelector('.toast') !== null);
+      expect(root.querySelector('.toast')!.textContent).toBe('Hidden by the Content Filter');
+    });
+
+    it('still plays a live Channel whose Livestream is not mature', async () => {
+      const opened: string[] = [];
+      await searchAndMoveDown({
+        search: async () => ({ channels: [channel('xqc', { isLive: true })], categories: [] }),
+        channelLivestream: async (slug) => (opened.push(slug), stream(1, { channelSlug: slug })),
+      });
+      press('Enter');
+      await until(() => opened.length === 1);
+      await wait(10);
+      expect(root.querySelector('.toast')).toBeNull();
+    });
+  });
+
   it('leaves the input for the results on the TV keyboard Done key', async () => {
     await openSearch({ search: async () => ({ channels: [channel('a')], categories: [] }) });
     type('a');
@@ -850,5 +901,86 @@ describe('Search', () => {
     await wait(10);
     expect(input()).not.toBeNull();
     expect(root.textContent).not.toContain('Top Livestreams');
+  });
+});
+
+describe('Content Filter', () => {
+  async function openSettings() {
+    await until(() => root.querySelectorAll('.tile').length >= 1);
+    button('Settings').click();
+    await until(() => !!root.querySelector('.settings'));
+  }
+
+  it('shows a switch in Settings, off by default, that stays on after a restart', async () => {
+    const api = { topLivestreams: async () => [stream(1)] };
+    mount(api);
+    await openSettings();
+    expect(root.textContent).toContain('Content Filter');
+    expect(button('Off').getAttribute('aria-pressed')).toBe('true');
+    expect(button('On').getAttribute('aria-pressed')).toBe('false');
+
+    button('On').click();
+    await until(() => button('On').getAttribute('aria-pressed') === 'true');
+
+    restart(api);
+    await openSettings();
+    expect(button('On').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  const slots = () => category('slots', { name: 'Slots & Casino', parentSlug: 'gambling', tags: ['Gambling'], isMature: true });
+
+  /** The Viewer turned the Content Filter on in an earlier session. */
+  function filterWasOn() {
+    storage.setItem('kick.settings', JSON.stringify({ contentFilter: true }));
+  }
+
+  const homeApi: Partial<KickApi> = {
+    topLivestreams: async () => [
+      stream(1),
+      stream(2, { isMature: true }),
+      stream(3, { category: slots() }),
+      stream(4),
+    ],
+    topCategories: async () => [category('just-chatting'), slots(), category('fortnite')],
+  };
+
+  it('shows everything on Home when off', async () => {
+    mount(homeApi);
+    await until(() => root.querySelectorAll('.category-tile').length === 3);
+    expect(root.querySelectorAll('.tile').length).toBe(4);
+  });
+
+  it('hides mature and gambling Livestreams and gambling Categories on Home when on', async () => {
+    filterWasOn();
+    mount(homeApi);
+    await until(() => root.querySelectorAll('.category-tile').length === 2);
+    expect(root.textContent).not.toContain('Slots & Casino');
+    expect(root.textContent).toContain('Channel 1');
+    expect(root.textContent).toContain('Channel 4');
+    expect(root.textContent).not.toContain('Channel 2');
+    expect(root.textContent).not.toContain('Channel 3');
+  });
+
+  it('filters Home as soon as the Viewer turns it on', async () => {
+    mount(homeApi);
+    await openSettings();
+    button('On').click();
+    press('Escape');
+    await until(() => root.querySelectorAll('.category-tile').length === 2);
+    expect(root.textContent).not.toContain('Channel 2');
+  });
+
+  it('hides mature Livestreams on the Category screen when on', async () => {
+    filterWasOn();
+    mount({
+      topLivestreams: async () => [stream(1)],
+      topCategories: async () => [category('just-chatting')],
+      categoryLivestreams: async () => [stream(5, { isMature: true }), stream(6)],
+    });
+    await until(() => root.querySelectorAll('.category-tile').length === 1);
+    (root.querySelector('.category-tile') as HTMLElement).click();
+    await until(() => !!root.querySelector('.grid .tile'));
+    expect(root.textContent).toContain('Channel 6');
+    expect(root.textContent).not.toContain('Channel 5');
   });
 });

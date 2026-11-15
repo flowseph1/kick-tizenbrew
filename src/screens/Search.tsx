@@ -7,6 +7,7 @@ import { CategoryTile } from '../components/CategoryTile';
 import { ChannelTile } from '../components/ChannelTile';
 import { ErrorScreen } from '../components/ErrorScreen';
 import { Row } from '../components/Row';
+import { isHiddenLivestream, visibleCategories } from '../filter/contentFilter';
 
 /** The search runs this long after the last key press. There is no confirm step. */
 export const SEARCH_DELAY_MS = 400;
@@ -23,7 +24,8 @@ type State =
 
 /**
  * An input that opens the TV keyboard, and two result rows: Channels and Categories.
- * Results are not filtered here; the Content Filter (ticket 11) filters them in this screen.
+ * The Content Filter hides gambling Category results. Search Channels carry no mature flag,
+ * so a live Channel whose Livestream turns out mature (or gambling) is not played.
  * Back (the App default) returns to Home.
  */
 export function SearchScreen() {
@@ -100,7 +102,11 @@ export function SearchScreen() {
     }
     // Search does not carry the Livestream (no title or viewers), so load it before playing.
     api.channelLivestream(channel.slug).then(
-      (ls) => (ls ? open(ls) : app.toast(t('search.offline'))),
+      (ls) => {
+        if (!ls) app.toast(t('search.offline'));
+        else if (isHiddenLivestream(ls, app.settings.contentFilter)) app.toast(t('search.hidden'));
+        else open(ls);
+      },
       () => app.toast(t('error.title')),
     );
   }
@@ -148,7 +154,8 @@ function Results({
 }) {
   const app = useApp();
   const { t } = app;
-  if (results.channels.length === 0 && results.categories.length === 0) {
+  const categories = visibleCategories(results.categories, app.settings.contentFilter);
+  if (results.channels.length === 0 && categories.length === 0) {
     return <p class="status">{t('search.noResults', { word })}</p>;
   }
   return (
@@ -160,9 +167,9 @@ function Results({
           ))}
         </Row>
       ) : null}
-      {results.categories.length > 0 ? (
+      {categories.length > 0 ? (
         <Row title={t('search.categories')}>
-          {results.categories.map((c) => (
+          {categories.map((c) => (
             <CategoryTile key={c.id} category={c} onSelect={() => app.push({ name: 'category', category: c })} />
           ))}
         </Row>

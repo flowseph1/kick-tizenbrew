@@ -380,6 +380,12 @@ html.playing body {
   border-color: var(--accent);
 }
 
+.settings-hint {
+  margin: 16px 0 0;
+  font-size: 24px;
+  color: var(--muted);
+}
+
 .settings-about {
   margin-top: 96px;
   color: var(--muted);
