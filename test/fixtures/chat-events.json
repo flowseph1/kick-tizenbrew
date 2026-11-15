@@ -1,0 +1,26 @@
+[
+  {
+    "event": "pusher:connection_established",
+    "data": "{\"socket_id\":\"1824924.2649443\",\"activity_timeout\":120}"
+  },
+  {
+    "event": "pusher_internal:subscription_succeeded",
+    "data": "{}",
+    "channel": "chatrooms.668.v2"
+  },
+  {
+    "event": "App\\Events\\ChatMessageEvent",
+    "data": "{\"id\":\"76b2483f-38f2-49ec-a80d-ee91c22ab719\",\"chatroom_id\":668,\"content\":\"Majora's mask Cinema\",\"type\":\"reply\",\"created_at\":\"2026-11-15T03:28:12+00:00\",\"sender\":{\"id\":118794809,\"username\":\"jese_vp\",\"slug\":\"jese-vp\",\"identity\":{\"color\":\"#FF2C56\",\"badges\":[],\"badges_v2\":[{\"name\":\"level\",\"badge_type\":\"global\",\"image_url\":\"https:\\/\\/ext.cdn.kick.com\\/chat\\/badges\\/35_019f35ce-472b-7696-9b84-ad0c5488a4e4.png\",\"metadata\":{\"level\":35},\"selected\":false,\"sort_order\":1}]}},\"metadata\":{\"original_sender\":{\"id\":104442240,\"username\":\"FemboyFan69\"},\"original_message\":{\"id\":\"80094c35-75e6-4b56-a08f-ac7a13825744\",\"content\":\"Wind Waker is the best Zelda game\"},\"message_ref\":\"1794713291533\"},\"thread_parent_id\":\"1b146f1a-4040-445d-820c-6f96a7fa957a\"}",
+    "channel": "chatrooms.668.v2"
+  },
+  {
+    "event": "App\\Events\\ChatMessageEvent",
+    "data": "{\"id\":\"11afbe11-0686-46c9-8425-e94e52cd249e\",\"chatroom_id\":668,\"content\":\"[emote:1730760:emojiCrave]\",\"type\":\"message\",\"created_at\":\"2026-11-15T03:28:13+00:00\",\"sender\":{\"id\":90854633,\"username\":\"itsnotM00\",\"slug\":\"itsnotm00\",\"identity\":{\"color\":\"#FFD899\",\"badges\":[],\"badges_v2\":[{\"name\":\"level\",\"badge_type\":\"global\",\"image_url\":\"https:\\/\\/ext.cdn.kick.com\\/chat\\/badges\\/15_61050dae-2221-4500-aca7-0d3793fe98e0.png\",\"metadata\":{\"level\":15},\"selected\":true,\"sort_order\":1}]}},\"metadata\":{\"message_ref\":\"1794713292908\"}}",
+    "channel": "chatrooms.668.v2"
+  },
+  {
+    "event": "App\\Events\\ChatMessageEvent",
+    "data": "{\"id\":\"777d807c-021e-480b-980f-0d3a5fbbe155\",\"chatroom_id\":668,\"content\":\"Fishge\",\"type\":\"message\",\"created_at\":\"2026-11-15T03:28:16+00:00\",\"sender\":{\"id\":115317037,\"username\":\"mordhau_af\",\"slug\":\"mordhau-af\",\"identity\":{\"color\":\"#55FFC7\",\"badges\":[],\"badges_v2\":[{\"name\":\"level\",\"badge_type\":\"global\",\"image_url\":\"https:\\/\\/ext.cdn.kick.com\\/chat\\/badges\\/37_019f35ce-472c-749c-8e50-5f53afb1de7b.png\",\"metadata\":{\"level\":37},\"selected\":true,\"sort_order\":1}]}},\"metadata\":{\"message_ref\":\"1794713295854\"}}",
+    "channel": "chatrooms.668.v2"
+  }
+]
