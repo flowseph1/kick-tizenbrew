@@ -65,7 +65,8 @@ export function App({ api, t, exit, now = Date.now }: AppProps) {
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (isTextInput(e.target) && e.key && e.key.length === 1) return;
+      // Desktop: letters and Backspace edit the input. On the TV the Samsung keyboard takes the keys.
+      if (isTextInput(e.target) && e.key && (e.key.length === 1 || e.key === 'Backspace')) return;
       const action = toAction(e);
       if (!action) return;
       e.preventDefault();

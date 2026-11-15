@@ -41,6 +41,9 @@ export function Home() {
     <div class="home">
       <header class="top-bar">
         <span class="logo">KICK</span>
+        <button class="button top-bar-button" data-focus onClick={() => app.push({ name: 'search' })}>
+          {t('search.title')}
+        </button>
       </header>
       {top.status === 'loading' ? (
         <p class="status">{t('loading')}</p>
@@ -49,7 +52,9 @@ export function Home() {
           {top.value.length === 0 ? (
             <p class="status">{t('home.empty')}</p>
           ) : (
-            top.value.map((ls) => <LivestreamTile key={ls.id} livestream={ls} onSelect={() => open(ls)} />)
+            top.value.map((ls, i) => (
+              <LivestreamTile key={ls.id} livestream={ls} autofocus={i === 0} onSelect={() => open(ls)} />
+            ))
           )}
         </Row>
       )}

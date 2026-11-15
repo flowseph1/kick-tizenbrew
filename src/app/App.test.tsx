@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'preact';
 import { App } from './App';
 import { createTranslator } from '../i18n/strings';
-import type { Category, KickApi, Livestream } from '../api/types';
+import type { Category, Channel, KickApi, Livestream } from '../api/types';
 
 function stream(n: number, extra: Partial<Livestream> = {}): Livestream {
   return {
@@ -60,6 +60,8 @@ function mount(api: Partial<KickApi>) {
     topLivestreams: async () => [],
     topCategories: async () => [],
     categoryLivestreams: async () => [],
+    search: async () => ({ channels: [], categories: [] }),
+    channelLivestream: async () => null,
     ...api,
   };
   render(<App api={full} t={createTranslator('en')} exit={exit} now={() => now} />, root);
@@ -242,5 +244,184 @@ describe('Categories', () => {
     expect(root.textContent).toContain('Top Livestreams');
     expect(root.textContent).not.toContain('Press Back again to exit');
     expect(exit).not.toHaveBeenCalled();
+  });
+});
+
+describe('Search', () => {
+  function channel(slug: string, extra: Partial<Channel> = {}): Channel {
+    return { id: slug.length, slug, name: 'Name ' + slug, avatarUrl: '', isLive: false, followerCount: 10, ...extra };
+  }
+
+  function input() {
+    return root.querySelector('input') as HTMLInputElement;
+  }
+
+  function type(text: string) {
+    const el = input();
+    el.value = text;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function wait(ms: number) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  async function openSearch(api: Partial<KickApi>) {
+    mount({ topLivestreams: async () => [stream(1)], ...api });
+    await until(() => root.querySelectorAll('.tile').length === 1);
+    await until(() => (focusedText() || '').includes('Channel 1'));
+    press('ArrowLeft'); // from the first tile to Search in the top bar
+    expect(focusedText()).toBe('Search');
+    press('Enter');
+    await until(() => !!input() && document.activeElement === input());
+  }
+
+  it('opens from the top bar with the input focused, so the TV keyboard opens', async () => {
+    await openSearch({});
+    await until(() => document.activeElement === input());
+    expect(input().classList.contains('focused')).toBe(true);
+    expect(root.textContent).not.toContain('Top Livestreams');
+  });
+
+  it('searches once, 400 ms after the last key press, and shows Channel and Category rows', async () => {
+    const asked: string[] = [];
+    await openSearch({
+      search: async (word) => {
+        asked.push(word);
+        return { channels: [channel('xqc', { isLive: true }), channel('xqcisoffline')], categories: [category('slots')] };
+      },
+    });
+    type('x');
+    type('xq');
+    type('xqc');
+    await wait(300);
+    expect(asked).toEqual([]);
+    await wait(150);
+    await until(() => root.querySelectorAll('.channel-tile').length === 2);
+
+    expect(asked).toEqual(['xqc']);
+    expect(root.textContent).toContain('Channels');
+    expect(root.querySelector('.channel-tile')!.textContent).toContain('Name xqc');
+    expect(root.querySelector('.channel-tile')!.textContent).toContain('Live');
+    expect(root.querySelectorAll('.channel-tile')[1].textContent).toContain('Offline');
+    expect(root.textContent).toContain('Categories');
+    expect(root.querySelector('.category-tile')!.textContent).toContain('Cat slots');
+  });
+
+  it('does not search for a blank word', async () => {
+    const asked: string[] = [];
+    await openSearch({ search: async (w) => (asked.push(w), { channels: [], categories: [] }) });
+    type('   ');
+    await wait(450);
+    expect(asked).toEqual([]);
+    expect(root.textContent).not.toContain('No results');
+  });
+
+  it('shows a message when nothing matches', async () => {
+    await openSearch({});
+    type('zzzz');
+    await wait(400);
+    await until(() => root.textContent!.includes('No results for "zzzz"'));
+  });
+
+  async function searchAndMoveDown(api: Partial<KickApi>) {
+    await openSearch(api);
+    type('xqc');
+    await wait(400);
+    await until(() => root.querySelectorAll('[data-focus]').length > 1);
+    press('ArrowDown'); // leaves the input (closes the keyboard) for the first result
+    expect(document.activeElement).not.toBe(input());
+  }
+
+  it('shows "Offline" for an offline Channel and does not open it', async () => {
+    const opened: string[] = [];
+    await searchAndMoveDown({
+      search: async () => ({ channels: [channel('xqcisoffline')], categories: [] }),
+      channelLivestream: async (slug) => (opened.push(slug), null),
+    });
+    expect(focusedText()).toContain('Name xqcisoffline');
+    press('Enter');
+    await until(() => root.querySelector('.toast') !== null);
+    expect(root.querySelector('.toast')!.textContent).toBe('Offline');
+    expect(opened).toEqual([]);
+  });
+
+  it('loads the Livestream of a live Channel to play it', async () => {
+    const opened: string[] = [];
+    await searchAndMoveDown({
+      search: async () => ({ channels: [channel('xqc', { isLive: true })], categories: [] }),
+      channelLivestream: async (slug) => (opened.push(slug), stream(1, { channelSlug: slug })),
+    });
+    press('Enter');
+    await until(() => opened.length === 1);
+    expect(opened).toEqual(['xqc']);
+    expect(root.querySelector('.toast')).toBeNull();
+  });
+
+  it('shows "Offline" when a live Channel ended before OK', async () => {
+    await searchAndMoveDown({
+      search: async () => ({ channels: [channel('xqc', { isLive: true })], categories: [] }),
+      channelLivestream: async () => null,
+    });
+    press('Enter');
+    await until(() => root.querySelector('.toast') !== null);
+    expect(root.querySelector('.toast')!.textContent).toBe('Offline');
+  });
+
+  it('opens the Category screen from a Category result', async () => {
+    const asked: string[] = [];
+    await searchAndMoveDown({
+      search: async () => ({ channels: [], categories: [category('slots')] }),
+      categoryLivestreams: async (slug) => (asked.push(slug), [stream(7)]),
+    });
+    expect(focusedText()).toContain('Cat slots');
+    press('Enter');
+    await until(() => root.querySelectorAll('.grid .tile').length === 1);
+    expect(asked).toEqual(['slots']);
+    expect(root.querySelector('h1')!.textContent).toBe('Cat slots');
+  });
+
+  it('leaves the input for the results on the TV keyboard Done key', async () => {
+    await openSearch({ search: async () => ({ channels: [channel('a')], categories: [] }) });
+    type('a');
+    await wait(400);
+    await until(() => root.querySelectorAll('.channel-tile').length === 1);
+    input().dispatchEvent(new KeyboardEvent('keydown', { keyCode: 65376, bubbles: true }));
+    expect(document.activeElement).not.toBe(input());
+    expect(focusedText()).toContain('Name a');
+  });
+
+  it('shows the error screen with Retry when the search fails', async () => {
+    let calls = 0;
+    await openSearch({
+      search: async () => {
+        calls++;
+        if (calls === 1) throw new Error('blocked');
+        return { channels: [channel('a')], categories: [] };
+      },
+    });
+    type('a');
+    await wait(400);
+    await until(() => focusedText() === 'Retry');
+    press('Enter');
+    await until(() => root.querySelectorAll('.channel-tile').length === 1);
+    expect(calls).toBe(2);
+  });
+
+  it('returns to Home on Back, without the exit hint', async () => {
+    await openSearch({});
+    press('Escape');
+    await until(() => root.querySelectorAll('.tile').length === 1);
+    expect(root.textContent).toContain('Top Livestreams');
+    expect(root.textContent).not.toContain('Press Back again to exit');
+    expect(exit).not.toHaveBeenCalled();
+  });
+
+  it('lets Backspace edit the input on desktop instead of going Back', async () => {
+    await openSearch({});
+    input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }));
+    await wait(10);
+    expect(input()).not.toBeNull();
+    expect(root.textContent).not.toContain('Top Livestreams');
   });
 });
