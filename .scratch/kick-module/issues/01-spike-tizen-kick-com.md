@@ -42,3 +42,9 @@ Do not set `evaluateScriptOnDocumentStart`: TizenBrew does not navigate on a man
 ### Outcome
 
 Approach (a) rejected. See docs/adr/0001-own-app-module-not-tizen-kick-com.md.
+
+### Run 2 (2026-11-14, probe v2)
+
+- The panel shows a burst of `js error: Script error.` (cross origin script errors, about 14 in 1 s at page load). This matches the chunk parse failures in the run 1 analysis.
+- `tizen` and `webapis` are undefined on an external site, so the model is unknown.
+- `chromium: unknown`: Tizen user agents omit `Chrome/`. Probe v3 prints the full user agent and parses the Tizen form.

@@ -37,10 +37,12 @@
     render();
   }
 
-  var chrome = navigator.userAgent.match(/Chrome\/(\d+)/);
+  // Tizen UAs omit "Chrome/": e.g. "... (KHTML, like Gecko) 69.0.3497.106.1/5.5 TV Safari/537.36"
+  var chrome = navigator.userAgent.match(/Chrome\/(\d+)/) || navigator.userAgent.match(/\) (\d+)\.\d+\.\d+\.\d+[^ ]*\/[\d.]+ TV/);
   var model = 'unknown';
   try { model = window.webapis.productinfo.getRealModel(); } catch (e) {}
   header.push('chromium: ' + (chrome ? chrome[1] : 'unknown') + ', model: ' + model);
+  header.push('ua: ' + navigator.userAgent);
   header.push('tizen api: ' + (typeof window.tizen) + ', webapis: ' + (typeof window.webapis));
   log('url: ' + location.href);
 
