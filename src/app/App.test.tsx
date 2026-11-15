@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'preact';
 import { App } from './App';
 import { createTranslator } from '../i18n/strings';
-import type { KickApi, Livestream } from '../api/types';
+import type { Category, KickApi, Livestream } from '../api/types';
 
 function stream(n: number, extra: Partial<Livestream> = {}): Livestream {
   return {
@@ -16,6 +16,20 @@ function stream(n: number, extra: Partial<Livestream> = {}): Livestream {
     isMature: false,
     thumbnailUrl: 'https://images.kick.com/t' + n + '.webp',
     category: null,
+    ...extra,
+  };
+}
+
+function category(slug: string, extra: Partial<Category> = {}): Category {
+  return {
+    id: slug.length,
+    slug,
+    name: 'Cat ' + slug,
+    parentSlug: 'games',
+    isMature: false,
+    tags: [],
+    viewerCount: 100,
+    bannerUrl: 'https://files.kick.com/' + slug + '.webp',
     ...extra,
   };
 }
@@ -137,6 +151,96 @@ describe('Home', () => {
     press('Escape');
     now += 2500;
     press('Escape');
+    expect(exit).not.toHaveBeenCalled();
+  });
+});
+
+describe('Categories', () => {
+  it('shows a Categories row on Home with images and names', async () => {
+    mount({ topLivestreams: async () => [stream(1)], topCategories: async () => [category('just-chatting'), category('slots')] });
+    await until(() => root.querySelectorAll('.category-tile').length === 2);
+
+    expect(root.textContent).toContain('Categories');
+    const first = root.querySelector('.category-tile')!;
+    expect(first.textContent).toContain('Cat just-chatting');
+    expect(first.querySelector('img')!.getAttribute('src')).toBe('https://files.kick.com/just-chatting.webp');
+  });
+
+  async function openCategory(api: Partial<KickApi>) {
+    mount({ topLivestreams: async () => [stream(1)], topCategories: async () => [category('just-chatting')], ...api });
+    await until(() => root.querySelectorAll('.category-tile').length === 1);
+    await until(() => focusedText() !== null);
+    press('ArrowRight'); // from the Top Livestreams tile to the Category tile
+    expect(focusedText()).toContain('Cat just-chatting');
+    press('Enter');
+  }
+
+  it('opens the Category screen with a grid of its Livestreams on OK', async () => {
+    const asked: string[] = [];
+    await openCategory({
+      categoryLivestreams: async (slug) => {
+        asked.push(slug);
+        return [stream(7), stream(8), stream(9)];
+      },
+    });
+    await until(() => root.querySelectorAll('.grid .tile').length === 3);
+
+    expect(asked).toEqual(['just-chatting']);
+    expect(root.querySelector('h1')!.textContent).toBe('Cat just-chatting');
+    expect(root.querySelector('.category-tile')).toBeNull();
+    await until(() => focusedText() !== null);
+    expect(focusedText()).toContain('Channel 7');
+  });
+
+  it('moves focus across and down the grid with the arrows', async () => {
+    await openCategory({ categoryLivestreams: async () => [1, 2, 3, 4, 5, 6].map((n) => stream(n)) });
+    await until(() => root.querySelectorAll('.grid .tile').length === 6);
+    // Lay the grid out in rows of 4.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const all = Array.prototype.slice.call(document.querySelectorAll('[data-focus]'));
+      const i = all.indexOf(this);
+      const x = (i % 4) * 100;
+      const y = Math.floor(i / 4) * 100;
+      return { left: x, top: y, width: 90, height: 90, right: x + 90, bottom: y + 90, x, y } as DOMRect;
+    });
+    await until(() => focusedText() !== null);
+
+    press('ArrowRight');
+    expect(focusedText()).toContain('Channel 2');
+    press('ArrowDown');
+    expect(focusedText()).toContain('Channel 6');
+    press('ArrowUp');
+    expect(focusedText()).toContain('Channel 2');
+  });
+
+  it('shows a message when the Category has no Livestreams', async () => {
+    await openCategory({ categoryLivestreams: async () => [] });
+    await until(() => root.textContent!.includes('No Livestreams in this Category right now'));
+  });
+
+  it('shows the error screen with Retry when the Category fails to load', async () => {
+    let calls = 0;
+    await openCategory({
+      categoryLivestreams: async () => {
+        calls++;
+        if (calls === 1) throw new Error('blocked');
+        return [stream(7)];
+      },
+    });
+    await until(() => focusedText() === 'Retry');
+    press('Enter');
+    await until(() => root.querySelectorAll('.grid .tile').length === 1);
+    expect(calls).toBe(2);
+  });
+
+  it('returns to Home on Back, without the exit hint', async () => {
+    await openCategory({ categoryLivestreams: async () => [stream(7)] });
+    await until(() => root.querySelectorAll('.grid .tile').length === 1);
+
+    press('Escape');
+    await until(() => root.querySelectorAll('.category-tile').length === 1);
+    expect(root.textContent).toContain('Top Livestreams');
+    expect(root.textContent).not.toContain('Press Back again to exit');
     expect(exit).not.toHaveBeenCalled();
   });
 });

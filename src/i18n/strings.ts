@@ -6,6 +6,8 @@ const en = {
   'home.topLivestreams': 'Top Livestreams',
   'home.empty': 'No Livestreams right now',
   'home.exitHint': 'Press Back again to exit',
+  'home.categories': 'Categories',
+  'category.empty': 'No Livestreams in this Category right now',
   'tile.viewers': '{count} viewers',
   'loading': 'Loading',
   'error.title': 'Could not reach Kick',
