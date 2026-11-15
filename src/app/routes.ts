@@ -5,6 +5,7 @@ import type { Category } from '../api/types';
 export type Route =
   | { name: 'home' }
   /** Carries the whole Category so the screen shows its name (and ticket 11 can filter) without a fetch. */
-  | { name: 'category'; category: Category };
+  | { name: 'category'; category: Category }
+  | { name: 'settings' };
 
 export type RouteName = Route['name'];

@@ -5,10 +5,19 @@ export function formatCount(n: number): string {
   return n.toLocaleString('en-US');
 }
 
-export function LivestreamTile({ livestream, onSelect }: { livestream: Livestream; onSelect?: () => void }) {
+export function LivestreamTile({
+  livestream,
+  onSelect,
+  autofocus,
+}: {
+  livestream: Livestream;
+  onSelect?: () => void;
+  /** Focus this tile first when the screen opens (the top bar sits above it). */
+  autofocus?: boolean;
+}) {
   const { t } = useApp();
   return (
-    <div class="tile" data-focus onClick={onSelect}>
+    <div class="tile" data-focus data-autofocus={autofocus ? true : undefined} onClick={onSelect}>
       <div class="tile-thumb">
         {livestream.thumbnailUrl ? <img src={livestream.thumbnailUrl} alt="" /> : null}
         <span class="tile-viewers">{t('tile.viewers', { count: formatCount(livestream.viewerCount) })}</span>
