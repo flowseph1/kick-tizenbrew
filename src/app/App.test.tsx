@@ -1176,6 +1176,85 @@ describe('Favourites', () => {
     expect(toastText()).toBe('Added xQc to Favourites');
   });
 
+  it('refreshes the live status every 60 s while Home is visible, and not on other screens', async () => {
+    favouritesWere([favourite('a'), favourite('b', { addedAt: 2 })]);
+    let liveNow = ['a'];
+    const asked: string[] = [];
+    vi.useFakeTimers();
+    mount({
+      topLivestreams: async () => [stream(1)],
+      channelLivestream: async (slug) => {
+        asked.push(slug);
+        return liveNow.indexOf(slug) === -1 ? null : stream(1, { channelSlug: slug, title: 'Live ' + slug });
+      },
+    });
+    await vi.advanceTimersByTimeAsync(200);
+    const names = () => favouriteTiles().map((el) => el.querySelector('.channel-name')!.textContent);
+    expect(names()).toEqual(['Fav a', 'Fav b']);
+    expect(asked).toHaveLength(2);
+
+    liveNow = ['b'];
+    await vi.advanceTimersByTimeAsync(59000);
+    expect(asked).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(asked).toHaveLength(4);
+    expect(names()).toEqual(['Fav b', 'Fav a']);
+    expect(favouriteTiles()[1].classList.contains('offline')).toBe(true);
+
+    // Away from Home, no checks.
+    button('Settings').click();
+    await vi.advanceTimersByTimeAsync(200);
+    expect(root.querySelector('.settings')).not.toBeNull();
+    await vi.advanceTimersByTimeAsync(120000);
+    expect(asked).toHaveLength(4);
+  });
+
+  it('shows and plays Favourites the Content Filter would hide', async () => {
+    storage.setItem('kick.settings', JSON.stringify({ contentFilter: true }));
+    favouritesWere([favourite('casino', { name: 'Casino' })]);
+    const slots = category('slots', { parentSlug: 'gambling', tags: ['Gambling'], isMature: true });
+    const hidden = stream(3, { channelSlug: 'casino', isMature: true, category: slots });
+    mount({
+      topLivestreams: async () => [stream(1), hidden],
+      channelLivestream: async () => hidden,
+      channel: async (slug) => channelFor(hidden, slug),
+    });
+    await until(() => favouriteTiles().length === 1 && root.querySelectorAll('.tile').length === 1);
+    expect(favouriteTiles()[0].classList.contains('offline')).toBe(false);
+    expect(favouriteTiles()[0].textContent).toContain('Casino');
+    favouriteTiles()[0].click();
+    await until(() => players.length === 1 && players[0].opened.length === 1);
+    expect(toastText()).toBeNull();
+    expect(stored()[0].watchCount).toBe(1);
+  });
+
+  it('keeps Favourites after a restart', async () => {
+    const api = { topLivestreams: async () => [stream(1)] };
+    mount(api);
+    await until(() => (focusedText() || '').includes('Channel 1'));
+    press('y');
+    await until(() => favouriteTiles().length === 1);
+    restart(api);
+    await until(() => favouriteTiles().length === 1);
+    expect(favouriteTiles()[0].textContent).toContain('Channel 1');
+  });
+
+  it('still adds Favourites, for this session, when localStorage throws', async () => {
+    storage = {
+      getItem: () => {
+        throw new Error('SecurityError');
+      },
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      },
+    };
+    mount({ topLivestreams: async () => [stream(1)] });
+    await until(() => (focusedText() || '').includes('Channel 1'));
+    press('y');
+    await until(() => favouriteTiles().length === 1);
+    expect(toastText()).toBe('Added Channel 1 to Favourites');
+  });
+
   async function playing(api: Partial<KickApi> = {}) {
     mount({
       topLivestreams: async () => [stream(1)],

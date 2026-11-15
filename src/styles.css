@@ -476,3 +476,33 @@ html.playing body {
 .badge-offline {
   font-weight: 700;
 }
+
+/* Favourites: a star in the corner of any tile of a Favourite Channel (ticket 06). */
+.tile.is-favourite,
+.channel-tile.is-favourite {
+  position: relative;
+}
+
+.tile.is-favourite::after,
+.channel-tile.is-favourite::after {
+  content: '\2605';
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: #ffd400;
+  font-size: 32px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+
+.favourite-tile .tile-title {
+  margin-top: 8px;
+  font-size: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The Info Bar Favourite button while the Channel is a Favourite. */
+.info-bar-favourite[aria-pressed="true"] {
+  box-shadow: inset 0 -6px 0 #ffd400;
+}
