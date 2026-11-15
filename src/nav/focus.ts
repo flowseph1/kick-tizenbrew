@@ -13,6 +13,8 @@ export const FOCUSED_CLASS = 'focused';
 export class FocusManager {
   private current: HTMLElement | null = null;
   private scope: () => HTMLElement | null;
+  /** True while focus sits on a stand in, before the screen's `data-autofocus` element exists. */
+  private fallback = false;
 
   constructor(scope: () => HTMLElement | null) {
     this.scope = scope;
@@ -37,6 +39,7 @@ export class FocusManager {
   }
 
   set(el: HTMLElement | null): void {
+    this.fallback = false;
     if (this.current === el) return;
     if (this.current) this.current.classList.remove(FOCUSED_CLASS);
     this.current = el;
@@ -47,18 +50,27 @@ export class FocusManager {
     }
   }
 
-  /** Keeps focus on something visible: call after the screen content changes. */
+  /**
+   * Keeps focus on something visible: call after the screen content changes.
+   * When focus only landed on the first focusable because the screen had no `data-autofocus`
+   * element yet (for example the top bar while tiles load), it moves to that element once it appears.
+   */
   ensure(): void {
     const all = this.focusables();
+    const root = this.scope();
+    const preferred = root ? root.querySelector<HTMLElement>('[data-autofocus]') : null;
     if (this.current && all.indexOf(this.current) !== -1) {
+      if (this.fallback && preferred && preferred !== this.current) {
+        this.set(preferred);
+        return;
+      }
       // Preact may have re-rendered the class attribute away.
       this.current.classList.add(FOCUSED_CLASS);
       return;
     }
     this.current = null;
-    const root = this.scope();
-    const preferred = root ? root.querySelector<HTMLElement>('[data-autofocus]') : null;
     this.set(preferred || all[0] || null);
+    this.fallback = !preferred && !!this.current;
   }
 
   move(dir: Direction): boolean {
