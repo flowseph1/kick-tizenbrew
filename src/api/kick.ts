@@ -4,6 +4,8 @@ import type { Category, KickApi, Livestream } from './types';
 
 export const KICK_BASE = 'https://kick.com';
 const TOP_LIMIT = 24;
+/** Kick caps `limit` at 32 on `/stream/livestreams`. */
+const CATEGORY_LIMIT = 32;
 
 /** The subset of `fetch` the adapter needs, so tests can pass a fake. */
 export type FetchLike = (url: string) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
@@ -29,9 +31,12 @@ function num(v: unknown): number {
   return typeof v === 'number' && isFinite(v) ? v : 0;
 }
 
+/** Maps a Kick subcategory (our Category) from lists, Livestreams, `categories/top`, `subcategories` or search. */
 export function mapCategory(raw: Json | null | undefined): Category | null {
   if (!raw || typeof raw !== 'object') return null;
   const parent = raw.category || {};
+  // `categories/top` and search send banner.src; `subcategories` sends banner.url.
+  const banner = raw.banner || {};
   return {
     id: num(raw.id),
     slug: str(raw.slug),
@@ -39,6 +44,8 @@ export function mapCategory(raw: Json | null | undefined): Category | null {
     parentSlug: str(parent.slug),
     isMature: raw.is_mature === true,
     tags: Array.isArray(raw.tags) ? raw.tags.filter((t: unknown) => typeof t === 'string') : [],
+    viewerCount: num(raw.viewers),
+    bannerUrl: str(banner.src) || str(banner.url),
   };
 }
 
@@ -86,6 +93,14 @@ export function createKickApi(fetchFn: FetchLike, base: string = KICK_BASE): Kic
   return {
     topLivestreams() {
       return streamList('limit=' + TOP_LIMIT + '&sort=desc&page=1');
+    },
+    async topCategories() {
+      const body = await getJson('/api/v1/categories/top');
+      if (!Array.isArray(body)) throw new KickApiError('Unexpected Category list shape', 200);
+      return body.map(mapCategory).filter((c): c is Category => c !== null);
+    },
+    categoryLivestreams(slug) {
+      return streamList('limit=' + CATEGORY_LIMIT + '&sort=desc&page=1&subcategory=' + encodeURIComponent(slug));
     },
   };
 }
