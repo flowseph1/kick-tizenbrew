@@ -19,7 +19,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.mjs && node scripts/check-syntax.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
