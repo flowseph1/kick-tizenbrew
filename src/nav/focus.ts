@@ -12,9 +12,9 @@ export const FOCUSED_CLASS = 'focused';
 
 export class FocusManager {
   private current: HTMLElement | null = null;
-  /** True while `current` was picked only because no `data-autofocus` element existed. */
-  private fallback = false;
   private scope: () => HTMLElement | null;
+  /** True while focus sits on a stand in, before the screen's `data-autofocus` element exists. */
+  private fallback = false;
 
   constructor(scope: () => HTMLElement | null) {
     this.scope = scope;
@@ -39,6 +39,7 @@ export class FocusManager {
   }
 
   set(el: HTMLElement | null): void {
+    this.fallback = false;
     if (this.current === el) return;
     if (this.current) this.current.classList.remove(FOCUSED_CLASS);
     this.current = el;
@@ -49,24 +50,27 @@ export class FocusManager {
     }
   }
 
-  /** Keeps focus on something visible: call after the screen content changes. */
+  /**
+   * Keeps focus on something visible: call after the screen content changes.
+   * When focus only landed on the first focusable because the screen had no `data-autofocus`
+   * element yet (for example the top bar while tiles load), it moves to that element once it appears.
+   */
   ensure(): void {
     const all = this.focusables();
     const root = this.scope();
     const preferred = root ? root.querySelector<HTMLElement>('[data-autofocus]') : null;
     if (this.current && all.indexOf(this.current) !== -1) {
-      // A fallback pick (for example Search in the top bar while rows load) gives way to the
-      // element the screen wants first, until the Viewer moves focus.
-      if (!(this.fallback && preferred && preferred !== this.current)) {
-        // Preact may have re-rendered the class attribute away.
-        this.current.classList.add(FOCUSED_CLASS);
+      if (this.fallback && preferred && preferred !== this.current) {
+        this.set(preferred);
         return;
       }
-    } else {
-      this.current = null;
+      // Preact may have re-rendered the class attribute away.
+      this.current.classList.add(FOCUSED_CLASS);
+      return;
     }
+    this.current = null;
     this.set(preferred || all[0] || null);
-    this.fallback = !preferred;
+    this.fallback = !preferred && !!this.current;
   }
 
   move(dir: Direction): boolean {
@@ -77,7 +81,6 @@ export class FocusManager {
     const i = pickNext(this.current.getBoundingClientRect(), rects, dir);
     if (i === -1) return false;
     this.set(others[i]);
-    this.fallback = false;
     return true;
   }
 

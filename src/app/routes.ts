@@ -6,6 +6,7 @@ export type Route =
   | { name: 'home' }
   /** Carries the whole Category so the screen shows its name (and ticket 11 can filter) without a fetch. */
   | { name: 'category'; category: Category }
-  | { name: 'search' };
+  | { name: 'search' }
+  | { name: 'settings' };
 
 export type RouteName = Route['name'];
