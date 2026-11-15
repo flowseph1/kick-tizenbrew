@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { choosePlaylistUrl, PROXY_BASE, tizenVersion } from './route';
+import { choosePlaylistUrl, chooseVariantUrl, masterTextUrl, PROXY_BASE, tizenVersion } from './route';
 
 const TIZEN_50 =
   'Mozilla/5.0 (SMART-TV; LINUX; Tizen 5.0) AppleWebKit/537.36 (KHTML, like Gecko) 63.0.3239.84/5.0 TV Safari/537.36';
@@ -52,5 +52,26 @@ describe('choosePlaylistUrl', () => {
     expect(choosePlaylistUrl(PLAYBACK, 'hlsjs', { major: 5, minor: 0 })).toBe(PROXY_BASE + '/master.m3u8?u=' + enc);
     expect(choosePlaylistUrl(PLAYBACK, 'hlsjs', { major: 7, minor: 0 })).toBe(PROXY_BASE + '/master.m3u8?u=' + enc);
     expect(choosePlaylistUrl(PLAYBACK, 'hlsjs', null)).toBe(PROXY_BASE + '/master.m3u8?u=' + enc);
+  });
+});
+
+describe('chooseVariantUrl (AVPlay reopens at the chosen Quality)', () => {
+  const VARIANT = 'https://fa723fc1b171.use23.playlist.live-video.net/v1/playlist/abc.m3u8';
+
+  it('AVPlay on Tizen 5.x (or unknown) gets the variant plain through the proxy', () => {
+    const viaProxy = PROXY_BASE + '/media.m3u8?u=' + encodeURIComponent(VARIANT);
+    expect(chooseVariantUrl(VARIANT, { major: 5, minor: 0 })).toBe(viaProxy);
+    expect(chooseVariantUrl(VARIANT, null)).toBe(viaProxy);
+  });
+
+  it('AVPlay on Tizen 6 and newer opens the variant direct', () => {
+    expect(chooseVariantUrl(VARIANT, { major: 6, minor: 0 })).toBe(VARIANT);
+  });
+});
+
+describe('masterTextUrl', () => {
+  it('reads the master through the proxy (no CORS for our origin), not rewritten, for the Quality list', () => {
+    const PLAYBACK = 'https://x.playback.live-video.net/api/video/v1/x.m3u8?token=a';
+    expect(masterTextUrl(PLAYBACK)).toBe(PROXY_BASE + '/master.m3u8?u=' + encodeURIComponent(PLAYBACK));
   });
 });
