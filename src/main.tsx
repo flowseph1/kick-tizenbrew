@@ -40,6 +40,11 @@ const playback: PlaybackDeps = {
       : (emit) => new HlsJsPlayer(emit),
   proxyReady: () =>
     proxyUp ? Promise.resolve(true) : waitForProxy((url) => fetch(url)).then((ok) => (proxyUp = ok)),
+  fetchText: (url) =>
+    fetch(url).then((r) => {
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' for ' + url);
+      return r.text();
+    }),
 };
 
 render(

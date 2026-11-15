@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChannelDetail, KickApi, Livestream } from '../api/types';
-import { PROXY_BASE } from './route';
+import master from '../../test/fixtures/master.m3u8?raw';
+import type { Quality } from './quality';
+import { PROXY_BASE, type Engine, type TizenVersion } from './route';
 import { createPlaybackSession, ENDED_MS, RECONNECT_MS, type SessionState } from './session';
 import type { Player, PlayerEvent } from './types';
 
@@ -31,14 +33,22 @@ function channel(live: boolean, token = 't1'): ChannelDetail {
 }
 
 class FakePlayer implements Player {
-  readonly engine = 'hlsjs' as const;
   opened: string[] = [];
   calls: string[] = [];
+  qualities: (string | null)[] = [];
   closed = false;
-  constructor(public emit: (e: PlayerEvent) => void) {}
+  constructor(
+    public emit: (e: PlayerEvent) => void,
+    readonly engine: Engine = 'hlsjs',
+  ) {}
   open(url: string) {
     this.opened.push(url);
     this.closed = false;
+  }
+  /** Like the real players: hls.js switches in place, AVPlay cannot. */
+  setQuality(q: Quality | null) {
+    this.qualities.push(q ? q.label : null);
+    return this.engine === 'hlsjs';
   }
   play() {
     this.calls.push('play');
@@ -55,7 +65,14 @@ let player: FakePlayer;
 let states: SessionState[];
 let done: ReturnType<typeof vi.fn<() => void>>;
 
-function setup(channelFn: KickApi['channel'], proxyReady: () => Promise<boolean> = async () => true) {
+let fetched: string[];
+
+function setup(
+  channelFn: KickApi['channel'],
+  proxyReady: () => Promise<boolean> = async () => true,
+  more: { engine?: Engine; tizen?: TizenVersion | null } = {},
+) {
+  fetched = [];
   states = [];
   done = vi.fn<() => void>();
   const api: KickApi = {
@@ -69,9 +86,13 @@ function setup(channelFn: KickApi['channel'], proxyReady: () => Promise<boolean>
   const session = createPlaybackSession({
     api,
     slug: 'xqc',
-    tizen: null,
-    createPlayer: (emit) => (player = new FakePlayer(emit)),
+    tizen: more.tizen === undefined ? null : more.tizen,
+    createPlayer: (emit) => (player = new FakePlayer(emit, more.engine)),
     proxyReady,
+    fetchText: async (url) => {
+      fetched.push(url);
+      return master;
+    },
     onState: (s) => states.push(s),
     onDone: done,
   });
@@ -243,5 +264,87 @@ describe('PlaybackSession', () => {
     session.start();
     await vi.advanceTimersByTimeAsync(0);
     expect(last().status).toBe('error');
+  });
+});
+
+describe('PlaybackSession Quality', () => {
+  const VARIANT = 'https://fa723fc1b171.use23.playlist.live-video.net/v1/playlist/XXX.m3u8';
+
+  async function playing(more: { engine?: Engine; tizen?: TizenVersion | null } = {}) {
+    let token = 0;
+    const session = setup(async () => channel(true, 'tok' + ++token), undefined, more);
+    session.start();
+    await vi.advanceTimersByTimeAsync(0);
+    player.emit({ type: 'playing' });
+    return session;
+  }
+
+  it('lists the variants of the master, read through the proxy with a fresh token', async () => {
+    const session = await playing();
+    const list = await session.qualities();
+    expect(list.map((q) => q.label)).toEqual(['1080p60', '720p60', '480p30', '360p30', '160p30']);
+    expect(fetched).toEqual([PROXY_BASE + '/master.m3u8?u=' + encodeURIComponent(PLAYBACK.replace('t1', 'tok2'))]);
+  });
+
+  it('starts at Auto', async () => {
+    const session = await playing();
+    expect(session.quality()).toBeNull();
+  });
+
+  it('hls.js switches in place: no reopen', async () => {
+    const session = await playing();
+    const list = await session.qualities();
+    session.setQuality(list[1]);
+    expect(player.qualities).toEqual(['720p60']);
+    expect(player.opened).toHaveLength(1);
+    expect(session.quality()!.label).toBe('720p60');
+    expect(last().status).toBe('playing');
+  });
+
+  it('AVPlay on Tizen 5 reopens at the variant through the proxy, and Auto reopens the master', async () => {
+    const session = await playing({ engine: 'avplay', tizen: { major: 5, minor: 0 } });
+    const list = await session.qualities();
+    session.setQuality(list[1]);
+    expect(player.opened[1]).toBe(PROXY_BASE + '/media.m3u8?u=' + encodeURIComponent(VARIANT));
+    expect(last().status).toBe('loading');
+    player.emit({ type: 'playing' });
+    expect(last().status).toBe('playing');
+
+    session.setQuality(null);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(session.quality()).toBeNull();
+    expect(player.opened[2]).toContain('/master.m3u8?rewrite=1&u=');
+  });
+
+  it('choosing the Quality already playing does nothing', async () => {
+    const session = await playing({ engine: 'avplay', tizen: { major: 5, minor: 0 } });
+    session.setQuality(null);
+    expect(player.opened).toHaveLength(1);
+  });
+
+  it('a reconnect keeps the Quality on hls.js; AVPlay reopens the master, so it goes back to Auto', async () => {
+    const hls = await playing();
+    hls.setQuality((await hls.qualities())[1]);
+    player.emit({ type: 'error', detail: 'network' });
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(player.opened).toHaveLength(2);
+    expect(hls.quality()!.label).toBe('720p60');
+    expect(player.qualities).toEqual(['720p60', '720p60']);
+
+    const av = await playing({ engine: 'avplay', tizen: { major: 5, minor: 0 } });
+    av.setQuality((await av.qualities())[1]);
+    player.emit({ type: 'error', detail: 'network' });
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(player.opened[2]).toContain('/master.m3u8?rewrite=1&u=');
+    expect(av.quality()).toBeNull();
+  });
+
+  it('start() again (a new Livestream, or Retry) starts at Auto', async () => {
+    const session = await playing();
+    session.setQuality((await session.qualities())[0]);
+    session.start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(session.quality()).toBeNull();
+    expect(player.qualities).toEqual([]);
   });
 });

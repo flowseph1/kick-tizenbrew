@@ -1,5 +1,6 @@
 // Player on `webapis.avplay`: a hardware video plane under the page. The HTML above it must be
 // transparent (body.playing in styles.css). Reference: Samsung AVPlay API; usage after Replexo/kick-tizen.
+import type { Quality } from './quality';
 import type { Player, PlayerEvent } from './types';
 
 export interface AvPlayListener {
@@ -87,6 +88,11 @@ export class AvPlayPlayer implements Player {
     } catch (e) {
       emit({ type: 'error', detail: String(e) });
     }
+  }
+
+  /** AVPlay has no documented in place HLS variant switch: the session reopens at the variant URL. */
+  setQuality(_quality: Quality | null): boolean {
+    return false;
   }
 
   play(): void {

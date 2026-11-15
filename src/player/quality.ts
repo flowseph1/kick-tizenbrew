@@ -12,6 +12,12 @@ export interface Quality {
   url: string;
 }
 
+/** True for the same variant (or both Auto). Lists are re-read with fresh tokens, so compare by label and bandwidth. */
+export function sameQuality(a: Quality | null, b: Quality | null): boolean {
+  if (!a || !b) return a === b;
+  return a.label === b.label && a.bandwidth === b.bandwidth;
+}
+
 function attrs(line: string): Record<string, string> {
   const out: Record<string, string> = {};
   const re = /([A-Z0-9-]+)=("[^"]*"|[^,]*)/g;

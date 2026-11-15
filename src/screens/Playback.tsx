@@ -23,6 +23,7 @@ export function Playback({ slug }: { slug: string }) {
         tizen: app.playback.tizen,
         createPlayer: app.playback.createPlayer,
         proxyReady: app.playback.proxyReady,
+        fetchText: app.playback.fetchText,
         onState: setState,
         onDone: () => app.back(),
       }),

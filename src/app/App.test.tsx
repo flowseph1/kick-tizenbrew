@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'preact';
 import { App } from './App';
 import type { Player, PlayerEvent } from '../player/types';
+import type { Quality } from '../player/quality';
+import masterFixture from '../../test/fixtures/master.m3u8?raw';
 import { PROXY_BASE } from '../player/route';
 import { createSettingsStore, type KeyValueStorage } from '../settings/settings';
 import type { Category, Channel, ChannelDetail, KickApi, Livestream } from '../api/types';
@@ -56,10 +58,15 @@ class FakePlayer implements Player {
   readonly engine = 'hlsjs' as const;
   opened: string[] = [];
   calls: string[] = [];
+  qualities: (string | null)[] = [];
   closed = false;
   constructor(public emit: (e: PlayerEvent) => void) {}
   open(url: string) {
     this.opened.push(url);
+  }
+  setQuality(q: Quality | null) {
+    this.qualities.push(q ? q.label : null);
+    return true;
   }
   play() {
     this.calls.push('play');
@@ -119,6 +126,7 @@ function mount(api: Partial<KickApi>, tvLanguage = 'en-US') {
       return p;
     },
     proxyReady: async () => true,
+    fetchText: async () => masterFixture,
   };
   render(
     <App
