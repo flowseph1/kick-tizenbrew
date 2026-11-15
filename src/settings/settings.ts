@@ -20,8 +20,14 @@ function oneOf<T extends string>(values: T[]) {
   return (value: unknown): value is T => values.indexOf(value as T) !== -1;
 }
 
+function isBoolean(value: unknown): value is boolean {
+  return value === true || value === false;
+}
+
 const schema = {
   language: { defaultValue: 'auto', isValid: oneOf(LANGUAGE_CHOICES) } as Field<LanguageChoice>,
+  /** Hides gambling Categories and mature Livestreams (see `src/filter/contentFilter.ts`). */
+  contentFilter: { defaultValue: false, isValid: isBoolean } as Field<boolean>,
 };
 
 type Schema = typeof schema;
