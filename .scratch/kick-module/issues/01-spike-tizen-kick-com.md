@@ -48,3 +48,7 @@ Approach (a) rejected. See docs/adr/0001-own-app-module-not-tizen-kick-com.md.
 - The panel shows a burst of `js error: Script error.` (cross origin script errors, about 14 in 1 s at page load). This matches the chunk parse failures in the run 1 analysis.
 - `tizen` and `webapis` are undefined on an external site, so the model is unknown.
 - `chromium: unknown`: Tizen user agents omit `Chrome/`. Probe v3 prints the full user agent and parses the Tizen form.
+
+### Test TV
+
+UN58RU7100PXPA: 2019 model, Tizen 5.0, Chromium 63. The v1 target is lowered to Tizen 5.0 to include it. The former ticket 04 (playlist proxy) is merged into 03, because this TV needs the proxy to play.

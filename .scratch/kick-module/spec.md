@@ -20,10 +20,10 @@ A Viewer watches Kick Livestreams on a Samsung Tizen TV with the remote, through
 |---|---|
 | Module type | TizenBrew `app` module (`packageType: "app"`, `appPath: "dist/index.html"`) |
 | Install | `gh/flowseph1/kick-tizenbrew` (latest `master`), or `@<tag>` to pin |
-| Minimum TV | Tizen 5.5 (Chromium 69). Shipped JS must parse on Chromium 69: no `?.`, `??` or other ES2020+ syntax in `dist/`. |
+| Minimum TV | Tizen 5.0, 2019 (Chromium 63). Shipped JS and CSS must work on Chromium 63: no `?.`, `??` or other syntax newer than Chromium 63 in `dist/`. Test TV: UN58RU7100 (2019, Tizen 5.0). |
 | Origin | `http://127.0.0.1:8081/module/<name>/` |
 | Keys to register | `ColorF0Red`, `ColorF1Green`, `ColorF2Yellow`, `ColorF3Blue`, `MediaPlayPause`, `MediaPlay`, `MediaPause`, `MediaStop` |
-| Stack | TypeScript, esbuild (target `chrome69`), Preact, Vitest |
+| Stack | TypeScript, esbuild (target `chrome63`), Preact, Vitest |
 | Release | Build to `dist/`, commit `dist/` on `master`, tag `vX.Y.Z` |
 
 ## Data source
@@ -45,7 +45,7 @@ All API responses map into our own types in one adapter module. The UI never rea
 - One `Player` interface with two implementations:
   - `AvPlayPlayer`: `webapis.avplay`, used on the TV. Hardware video plane under transparent HTML.
   - `HlsJsPlayer`: `<video>` with hls.js, used in desktop Chrome for development, through a local dev proxy to the CDN.
-- Tizen 5.x: AVPlay cannot read Kick's gzip playlists. A `serviceFile` (Node, ES5, runs on Node 4.4.3) proxies playlist requests and returns them uncompressed. Segments go direct to the CDN. On Tizen 6+ AVPlay uses the CDN direct. Confirm this split on a real TV.
+- Tizen 5.x: AVPlay cannot read Kick's gzip playlists. A `serviceFile` (Node, ES5, runs on Node 4.4.3) proxies playlist requests and returns them uncompressed. Segments go direct to the CDN. On Tizen 6+ AVPlay uses the CDN direct. The test TV is Tizen 5.0, so the proxy path is the one verified first; confirm the direct path on a Tizen 6+ TV when one is available.
 - Quality: Auto by default. The `Quality` list shows the variants from the master playlist (for example 1080p60, 720p60, 480p30, 360p30, 160p30). If the TV cannot switch variants in place, reopen the stream at the chosen variant. The choice is not remembered; every Livestream starts at Auto.
 
 ## Screens
@@ -131,10 +131,9 @@ All UI text comes from one string table with `en` and `es`. "Auto" uses the TV l
 - Vitest, no TV needed: API adapter mapping, Favourites and Watch Count ordering, Content Filter rules, Quality list from a master playlist, string table completeness.
 - Desktop Chrome with `HlsJsPlayer` for the UI.
 - On the TV: playback, AVPlay Quality switch, `serviceFile` proxy on Tizen 5.x, Chat Overlay, remote keys.
-- A build check fails if `dist/` contains syntax newer than Chromium 69.
+- A build check fails if `dist/` contains syntax newer than Chromium 63.
 
 ## Open items
 
-- Probe v2 result: the Chromium version and model of the test TV.
 - Exact endpoints for Top Livestreams and Category Livestreams.
 - Whether AVPlay can switch Quality in place, or must reopen the stream.
