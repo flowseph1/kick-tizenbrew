@@ -12,6 +12,8 @@ export const FOCUSED_CLASS = 'focused';
 
 export class FocusManager {
   private current: HTMLElement | null = null;
+  /** True while `current` was picked only because no `data-autofocus` element existed. */
+  private fallback = false;
   private scope: () => HTMLElement | null;
 
   constructor(scope: () => HTMLElement | null) {
@@ -50,15 +52,21 @@ export class FocusManager {
   /** Keeps focus on something visible: call after the screen content changes. */
   ensure(): void {
     const all = this.focusables();
-    if (this.current && all.indexOf(this.current) !== -1) {
-      // Preact may have re-rendered the class attribute away.
-      this.current.classList.add(FOCUSED_CLASS);
-      return;
-    }
-    this.current = null;
     const root = this.scope();
     const preferred = root ? root.querySelector<HTMLElement>('[data-autofocus]') : null;
+    if (this.current && all.indexOf(this.current) !== -1) {
+      // A fallback pick (for example Search in the top bar while rows load) gives way to the
+      // element the screen wants first, until the Viewer moves focus.
+      if (!(this.fallback && preferred && preferred !== this.current)) {
+        // Preact may have re-rendered the class attribute away.
+        this.current.classList.add(FOCUSED_CLASS);
+        return;
+      }
+    } else {
+      this.current = null;
+    }
     this.set(preferred || all[0] || null);
+    this.fallback = !preferred;
   }
 
   move(dir: Direction): boolean {
@@ -69,6 +77,7 @@ export class FocusManager {
     const i = pickNext(this.current.getBoundingClientRect(), rects, dir);
     if (i === -1) return false;
     this.set(others[i]);
+    this.fallback = false;
     return true;
   }
 
