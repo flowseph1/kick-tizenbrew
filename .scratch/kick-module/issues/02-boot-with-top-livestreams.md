@@ -8,7 +8,7 @@ See `.scratch/kick-module/spec.md` (Platform, Data source, Home, Remote navigati
 
 **Blocked by:** None (can start immediately). The test TV is a 2019 UN58RU7100 (Tizen 5.0, Chromium 63).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] The module is an `app` module and opens from TizenBrew on the TV.
 - [x] Home shows a Top Livestreams row: thumbnail, Channel name, title, viewer count.
