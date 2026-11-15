@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { KickApi } from '../api/types';
 import { createTranslator, resolveLanguage } from '../i18n/strings';
+import type { PlaybackDeps } from '../player/deps';
 import type { Settings, SettingsStore } from '../settings/settings';
 import { FocusManager } from '../nav/focus';
 import { isDirection, toAction } from '../nav/keys';
@@ -14,6 +15,7 @@ export interface AppProps {
   /** The TV language, for example `es-ES`. Language Auto follows it. */
   tvLanguage: string;
   exit: () => void;
+  playback: PlaybackDeps;
   now?: () => number;
 }
 
@@ -22,7 +24,7 @@ function isTextInput(target: EventTarget | null): boolean {
   return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
 }
 
-export function App({ api, settings: store, tvLanguage, exit, now = Date.now }: AppProps) {
+export function App({ api, settings: store, tvLanguage, exit, playback, now = Date.now }: AppProps) {
   const [settings, setSettings] = useState<Settings>(() => store.get());
   useEffect(() => {
     setSettings(store.get());
@@ -56,6 +58,7 @@ export function App({ api, settings: store, tvLanguage, exit, now = Date.now }: 
       t,
       now,
       focus,
+      playback,
       settings,
       setSetting: (key, value) => store.set(key, value),
       screenHandler,
@@ -71,7 +74,7 @@ export function App({ api, settings: store, tvLanguage, exit, now = Date.now }: 
         toastTimer.current = window.setTimeout(() => setToast(null), ms);
       },
     };
-  }, [api, t, now, settings, store]);
+  }, [api, t, now, settings, store, playback]);
 
   // Keep focus valid whenever the screen content changes (loading, error, data).
   useEffect(() => {

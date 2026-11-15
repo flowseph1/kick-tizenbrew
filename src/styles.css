@@ -178,6 +178,57 @@ body {
   font-size: 30px;
 }
 
+/* Playback. The video plane (AVPlay <object> or hls.js <video>) is the first child of body, under #app.
+   AVPlay draws on a hardware plane behind the whole web page, so html, body and the screen must be
+   transparent while it plays (html.playing, set by the Playback screen). */
+#app {
+  position: relative;
+  z-index: 1;
+}
+
+.video-plane {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background: #000;
+  object-fit: contain;
+}
+
+object.video-plane {
+  background: transparent;
+}
+
+html.playing,
+html.playing body {
+  background: transparent;
+}
+
+.playback {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playback-message {
+  padding: 24px 48px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  font-size: 40px;
+  font-weight: 700;
+}
+
+.playback-ended {
+  background: var(--bg);
+}
+
 .screen-title {
   margin: 0;
   font-size: 48px;
@@ -285,6 +336,7 @@ body {
 
 .settings-about p {
   margin: 0 0 12px;
+}
 
 .top-bar-button + .top-bar-button {
   margin-left: 24px;

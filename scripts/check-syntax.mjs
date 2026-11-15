@@ -20,7 +20,9 @@ function walk(d) {
 }
 
 const files = walk(dir);
-const js = files.filter((f) => f.endsWith('.js'));
+// dist/service.js is the TizenBrew serviceFile: it runs in Node 4.4.3 on Tizen 5, not in Chromium.
+const SERVICE = join(dir, 'service.js');
+const js = files.filter((f) => f.endsWith('.js') && f !== SERVICE);
 const css = files.filter((f) => f.endsWith('.css'));
 const problems = [];
 
@@ -59,11 +61,28 @@ function scan(list, rules) {
     }
   }
 }
+// 4. The serviceFile: ES5 syntax, and no Node APIs newer than 4.4.3 (or ES2016+ built ins).
+if (existsSync(SERVICE)) {
+  const esCheck = join(root, 'node_modules/.bin/es-check');
+  const r = spawnSync(esCheck, ['es5', SERVICE], { encoding: 'utf8' });
+  if (r.status !== 0) problems.push('es-check es5 (service):\n' + (r.stdout || '') + (r.stderr || ''));
+}
+const serviceRules = [
+  [/Buffer\.(from|alloc|allocUnsafe)\s*\(/, 'Buffer.from/alloc (use new Buffer, Node 4.4.3)'],
+  [/\.includes\s*\(/, 'includes() (ES2016; use indexOf)'],
+  [/\.(padStart|padEnd)\s*\(/, 'padStart/padEnd (ES2017)'],
+  [/Object\.(values|entries)\s*\(/, 'Object.values/entries (Node 7)'],
+];
+
 scan(js, regexRules);
+if (existsSync(SERVICE)) scan([SERVICE], serviceRules);
 scan(css, cssRules);
 
 if (problems.length) {
   console.error('check:syntax failed: output is not safe for Chromium 63\n' + problems.join('\n'));
   process.exit(1);
 }
-console.log('check:syntax ok: ' + js.length + ' JS and ' + css.length + ' CSS files are Chromium 63 safe');
+console.log(
+  'check:syntax ok: ' + js.length + ' JS and ' + css.length + ' CSS files are Chromium 63 safe' +
+    (existsSync(SERVICE) ? '; service.js is ES5 for Node 4.4.3' : ''),
+);

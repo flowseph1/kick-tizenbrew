@@ -90,6 +90,53 @@ describe('topLivestreams', () => {
   });
 });
 
+describe('channel', () => {
+  it('maps a live Channel with its playback URL, chatroom id and Livestream', async () => {
+    const calls: string[] = [];
+    const channel = await createKickApi(fakeFetch(200, channelLiveFixture, calls)).channel('xqc');
+
+    expect(calls).toEqual(['https://kick.com/api/v2/channels/xqc']);
+    expect(channel.id).toBe(668);
+    expect(channel.slug).toBe('xqc');
+    expect(channel.name).toBe('xQc');
+    expect(channel.avatarUrl).toBe(
+      'https://files.kick.com/images/user/676/profile_image/conversion/931b4e8f-5445-427c-bd82-b473530390cc-fullsize.webp',
+    );
+    expect(channel.chatroomId).toBe(668);
+    expect(channel.playbackUrl).toBe(
+      'https://fa723fc1b171.us-west-2.playback.live-video.net/api/video/v1/us-west-2.196233775518.channel.DsuAwCgUc9Bh.m3u8?token=REDACTED',
+    );
+    expect(channel.livestream).not.toBeNull();
+    const ls = channel.livestream!;
+    expect(ls.id).toBe(137883983);
+    expect(ls.channelSlug).toBe('xqc');
+    expect(ls.channelName).toBe('xQc');
+    expect(ls.viewerCount).toBe(9852);
+    expect(ls.isMature).toBe(true);
+    expect(ls.thumbnailUrl).toBe('https://stream.kick.com/thumbnails/livestream/137883983/thumb0/video_thumbnail/thumb0.jpg');
+    expect(ls.category!.name).toBe('The Legend of Zelda: Ocarina of Time');
+    expect(ls.category!.parentSlug).toBe('games');
+  });
+
+  it('maps an offline Channel with no Livestream', async () => {
+    const channel = await createKickApi(fakeFetch(200, channelOfflineFixture)).channel('degengambaslots');
+    expect(channel.slug).toBe('degengambaslots');
+    expect(channel.livestream).toBeNull();
+  });
+
+  it('encodes the slug in the URL', async () => {
+    const calls: string[] = [];
+    await createKickApi(fakeFetch(200, channelLiveFixture, calls)).channel('a b');
+    expect(calls).toEqual(['https://kick.com/api/v2/channels/a%20b']);
+  });
+
+  it('rejects with a 404 KickApiError for an unknown Channel', async () => {
+    const p = createKickApi(fakeFetch(404, channel404Fixture)).channel('nobody');
+    await expect(p).rejects.toBeInstanceOf(KickApiError);
+    await expect(p).rejects.toMatchObject({ status: 404 });
+  });
+});
+
 describe('topCategories', () => {
   it('maps the recorded Kick response into Categories, keeping slug, parent and mature flag', async () => {
     const calls: string[] = [];

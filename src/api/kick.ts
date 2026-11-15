@@ -1,6 +1,6 @@
 // The one adapter between the unofficial kick.com API and our own types.
 // Endpoints are recorded in `.scratch/kick-module/spec.md` (Data source).
-import type { Category, Channel, KickApi, Livestream } from './types';
+import type { Category, Channel, ChannelDetail, KickApi, Livestream } from './types';
 
 export const KICK_BASE = 'https://kick.com';
 const TOP_LIMIT = 24;
@@ -101,6 +101,22 @@ export function mapChannelLivestream(raw: Json): Livestream | null {
   };
 }
 
+/** Maps `GET /api/v2/channels/{slug}`. Here the avatar is `user.profile_pic` (with an underscore). */
+export function mapChannelDetail(raw: Json): ChannelDetail {
+  const user = raw.user || {};
+  const chatroom = raw.chatroom || {};
+  const slug = str(raw.slug);
+  return {
+    id: num(raw.id),
+    slug,
+    name: str(user.username) || slug,
+    avatarUrl: str(user.profile_pic),
+    chatroomId: num(chatroom.id),
+    playbackUrl: str(raw.playback_url),
+    livestream: mapChannelLivestream(raw),
+  };
+}
+
 function list(v: unknown): Json[] {
   return Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : [];
 }
@@ -130,6 +146,11 @@ export function createKickApi(fetchFn: FetchLike, base: string = KICK_BASE): Kic
   return {
     topLivestreams() {
       return streamList('limit=' + TOP_LIMIT + '&sort=desc&page=1');
+    },
+    async channel(slug) {
+      const body = await getJson('/api/v2/channels/' + encodeURIComponent(slug));
+      if (!body || typeof body !== 'object' || !body.slug) throw new KickApiError('Unexpected Channel shape', 200);
+      return mapChannelDetail(body);
     },
     async topCategories() {
       const body = await getJson('/api/v1/categories/top');
