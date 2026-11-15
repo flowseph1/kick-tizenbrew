@@ -8,7 +8,7 @@ See `.scratch/kick-module/spec.md` (Chat Overlay, Remote navigation).
 
 **Blocked by:** 05
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [x] Green key and the `Chat` button toggle the Chat Overlay.
 - [x] New messages appear live; only the last 50 stay.
