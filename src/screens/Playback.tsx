@@ -1,19 +1,43 @@
-import { useEffect, useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useApp, useScreenActions } from '../app/context';
 import { ErrorScreen } from '../components/ErrorScreen';
+import { InfoBar, type InfoBarButton } from '../components/InfoBar';
+import type { Quality } from '../player/quality';
 import { createPlaybackSession, type SessionState } from '../player/session';
 
 /** The video plane (AVPlay or `<video>`) sits under the page; this class on <html> makes the page transparent. */
 const PLAYING_CLASS = 'playing';
 
+/** The Info Bar hides after this long with no key press. */
+export const INFO_BAR_MS = 5000;
+
+/** What is shown over the video: nothing, the Info Bar with its buttons, or the Info Bar with the Quality list. */
+type Overlay = 'none' | 'bar' | 'quality';
+
 /**
- * Full screen playback of one Channel's Livestream. Ticket 05 adds the Info Bar on OK and Quality
- * (use `session.player()` and `session.channel()`); ticket 07 the Chat Overlay (`session.channel().chatroomId`).
+ * Full screen playback of one Channel's Livestream. OK shows the Info Bar (`session.channel()`);
+ * its Quality list applies a Quality with `session.setQuality()`. Ticket 07 adds the Chat Overlay
+ * (`session.channel().chatroomId`).
  */
 export function Playback({ slug }: { slug: string }) {
   const app = useApp();
   const { t } = app;
   const [state, setState] = useState<SessionState>({ status: 'loading' });
+
+  // The Info Bar. `overlayRef` is read by the key handler, which can run twice before a re-render.
+  const [overlay, setOverlayState] = useState<Overlay>('none');
+  const overlayRef = useRef<Overlay>('none');
+  const [focusOn, setFocusOn] = useState<InfoBarButton>('favourite');
+  const [qualities, setQualities] = useState<Quality[] | null | 'error'>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const listRequest = useRef(0);
+
+  function setOverlay(o: Overlay) {
+    overlayRef.current = o;
+    setOverlayState(o);
+    clearTimeout(hideTimer.current);
+    if (o !== 'none') hideTimer.current = setTimeout(() => setOverlay('none'), INFO_BAR_MS);
+  }
 
   const session = useMemo(
     () =>
@@ -24,7 +48,10 @@ export function Playback({ slug }: { slug: string }) {
         createPlayer: app.playback.createPlayer,
         proxyReady: app.playback.proxyReady,
         fetchText: app.playback.fetchText,
-        onState: setState,
+        onState: (s) => {
+          setState(s);
+          if (s.status === 'ended' || s.status === 'error') setOverlay('none');
+        },
         onDone: () => app.back(),
       }),
     [app, slug],
@@ -32,7 +59,10 @@ export function Playback({ slug }: { slug: string }) {
 
   useEffect(() => {
     session.start();
-    return () => session.stop();
+    return () => {
+      session.stop();
+      clearTimeout(hideTimer.current);
+    };
   }, [session]);
 
   const showVideo = state.status !== 'error' && state.status !== 'ended';
@@ -43,7 +73,48 @@ export function Playback({ slug }: { slug: string }) {
     return () => root.classList.remove(PLAYING_CLASS);
   }, [showVideo]);
 
+  function showInfoBar(): boolean {
+    const ch = session.channel();
+    if (!showVideo || !ch || !ch.livestream) return false;
+    setFocusOn('favourite');
+    setOverlay('bar');
+    return true;
+  }
+
+  function openQualityList() {
+    const id = ++listRequest.current;
+    setQualities(null);
+    setOverlay('quality');
+    session.qualities().then(
+      (list) => {
+        if (id === listRequest.current) setQualities(list);
+      },
+      () => {
+        if (id === listRequest.current) setQualities('error');
+      },
+    );
+  }
+
+  function closeQualityList() {
+    listRequest.current++;
+    setFocusOn('quality');
+    setOverlay('bar');
+  }
+
+  function chooseQuality(q: Quality | null) {
+    session.setQuality(q);
+    closeQualityList();
+  }
+
+  // Ticket 06: add or remove the Favourite (session.channel() has slug, name and avatarUrl).
+  function onFavourite() {}
+
+  // Ticket 07: show or hide the Chat Overlay (the green key does the same).
+  function onChat() {}
+
   useScreenActions((action) => {
+    // Any key while the Info Bar shows keeps it up for another 5 s.
+    if (overlayRef.current !== 'none') setOverlay(overlayRef.current);
     switch (action) {
       case 'play':
         session.play();
@@ -54,8 +125,15 @@ export function Playback({ slug }: { slug: string }) {
       case 'playPause':
         session.togglePause();
         return true;
-      case 'stop':
+      case 'ok':
+        // With the Info Bar up, OK presses the focused button (the App default).
+        return overlayRef.current === 'none' ? showInfoBar() : false;
       case 'back':
+        if (overlayRef.current === 'quality') closeQualityList();
+        else if (overlayRef.current === 'bar') setOverlay('none');
+        else app.back();
+        return true;
+      case 'stop':
         app.back();
         return true;
       default:
@@ -71,9 +149,24 @@ export function Playback({ slug }: { slug: string }) {
   else if (state.status === 'paused') message = t('playback.paused');
   else if (state.status === 'ended') message = t('playback.ended');
 
+  const channel = session.channel();
   return (
     <div class={'playback playback-' + state.status}>
       {message ? <div class="playback-message">{message}</div> : null}
+      {overlay !== 'none' && channel ? (
+        <InfoBar
+          channel={channel}
+          focusOn={focusOn}
+          onFavourite={onFavourite}
+          onChat={onChat}
+          onQuality={openQualityList}
+          quality={
+            overlay === 'quality'
+              ? { options: qualities, current: session.quality(), onChoose: chooseQuality }
+              : undefined
+          }
+        />
+      ) : null}
     </div>
   );
 }
