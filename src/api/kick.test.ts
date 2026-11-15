@@ -3,6 +3,11 @@ import topFixture from '../../test/fixtures/stream-livestreams.json';
 import categoriesTopFixture from '../../test/fixtures/categories-top.json';
 import subcategoriesFixture from '../../test/fixtures/subcategories.json';
 import categoryStreamsFixture from '../../test/fixtures/stream-livestreams-category.json';
+import searchXqcFixture from '../../test/fixtures/search-xqc.json';
+import searchSlotsFixture from '../../test/fixtures/search-slots.json';
+import channelLiveFixture from '../../test/fixtures/channel-live.json';
+import channelOfflineFixture from '../../test/fixtures/channel-offline.json';
+import channel404Fixture from '../../test/fixtures/channel-404.json';
 import { createKickApi, KickApiError, mapCategory } from './kick';
 
 function fakeFetch(status: number, body: unknown, calls: string[] = []) {
@@ -138,5 +143,84 @@ describe('categoryLivestreams', () => {
 
   it('rejects with a KickApiError when Kick answers with an error status', async () => {
     await expect(createKickApi(fakeFetch(500, {})).categoryLivestreams('x')).rejects.toBeInstanceOf(KickApiError);
+  });
+});
+
+describe('search', () => {
+  it('maps the recorded Kick search into Channels and Categories', async () => {
+    const results = await createKickApi(fakeFetch(200, searchXqcFixture)).search('xqc');
+
+    expect(results.channels).toHaveLength(3);
+    expect(results.channels[0]).toEqual({
+      id: 668,
+      slug: 'xqc',
+      name: 'xQc',
+      avatarUrl:
+        'https://files.kick.com/images/user/676/profile_image/conversion/931b4e8f-5445-427c-bd82-b473530390cc-fullsize.webp',
+      isLive: true,
+      followerCount: 1633107,
+    });
+    expect(results.channels[1]).toMatchObject({ slug: 'xqcisoffline', isLive: false, avatarUrl: '' });
+    expect(results.categories).toEqual([]);
+  });
+
+  it('keeps the Category data the Content Filter needs', async () => {
+    const results = await createKickApi(fakeFetch(200, searchSlotsFixture)).search('slots');
+
+    expect(results.categories[0]).toMatchObject({
+      id: 28,
+      slug: 'slots',
+      name: 'Slots & Casino',
+      parentSlug: 'gambling',
+      isMature: true,
+      tags: ['Gambling'],
+      bannerUrl:
+        'https://files.kick.com/images/subcategories/28/banner/conversion/f9233069-cfa7-4ae1-9b33-f2b9ca652fef-banner.webp',
+    });
+  });
+
+  it('encodes the searched word', async () => {
+    const calls: string[] = [];
+    await createKickApi(fakeFetch(200, searchXqcFixture, calls)).search('just chatting & co');
+    expect(calls).toEqual(['https://kick.com/api/search?searched_word=just%20chatting%20%26%20co']);
+  });
+
+  it('treats missing lists as empty', async () => {
+    const results = await createKickApi(fakeFetch(200, { livestreams: { tags: [] } })).search('zzz');
+    expect(results).toEqual({ channels: [], categories: [] });
+  });
+
+  it('rejects with a KickApiError when Kick fails', async () => {
+    await expect(createKickApi(fakeFetch(429, {})).search('x')).rejects.toBeInstanceOf(KickApiError);
+  });
+});
+
+describe('channelLivestream', () => {
+  it('maps the Livestream of a live Channel', async () => {
+    const calls: string[] = [];
+    const ls = await createKickApi(fakeFetch(200, channelLiveFixture, calls)).channelLivestream('xqc');
+
+    expect(calls).toEqual(['https://kick.com/api/v2/channels/xqc']);
+    expect(ls).toMatchObject({
+      id: 137883983,
+      channelSlug: 'xqc',
+      channelName: 'xQc',
+      viewerCount: 9852,
+      isMature: true,
+      thumbnailUrl: 'https://stream.kick.com/thumbnails/livestream/137883983/thumb0/video_thumbnail/thumb0.jpg',
+    });
+    expect(ls!.title).toContain('LIVE');
+    expect(ls!.category).toMatchObject({ slug: 'the-legend-of-zelda-ocarina-of-time-1', parentSlug: 'games' });
+  });
+
+  it('returns null for an offline Channel', async () => {
+    const ls = await createKickApi(fakeFetch(200, channelOfflineFixture)).channelLivestream('degengambaslots');
+    expect(ls).toBeNull();
+  });
+
+  it('rejects with a KickApiError for an unknown Channel', async () => {
+    await expect(createKickApi(fakeFetch(404, channel404Fixture)).channelLivestream('nobody')).rejects.toBeInstanceOf(
+      KickApiError,
+    );
   });
 });

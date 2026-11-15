@@ -42,6 +42,9 @@ export function Home() {
       <header class="top-bar">
         <span class="logo">KICK</span>
         <div class="top-bar-actions">
+          <button class="button top-bar-button" data-focus onClick={() => app.push({ name: 'search' })}>
+            {t('search.title')}
+          </button>
           <button class="button top-bar-button" data-focus onClick={() => app.push({ name: 'settings' })}>
             {t('home.settings')}
           </button>

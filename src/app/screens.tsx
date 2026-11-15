@@ -1,6 +1,7 @@
 import type { VNode } from 'preact';
 import { CategoryScreen } from '../screens/Category';
 import { Home } from '../screens/Home';
+import { SearchScreen } from '../screens/Search';
 import { SettingsScreen } from '../screens/Settings';
 import type { Route } from './routes';
 
@@ -11,6 +12,8 @@ export function renderScreen(route: Route): VNode {
       return <Home />;
     case 'category':
       return <CategoryScreen key={route.category.slug} category={route.category} />;
+    case 'search':
+      return <SearchScreen />;
     case 'settings':
       return <SettingsScreen />;
   }
