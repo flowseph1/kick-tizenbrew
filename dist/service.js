@@ -192,8 +192,8 @@ var require_proxy = __commonJS({
 
 // src/service/main.cjs
 var proxy = require_proxy();
-if (!global.__kickTizenbrewService) {
-  global.__kickTizenbrewService = true;
+if (!process.__kickTizenbrewService) {
+  process.__kickTizenbrewService = true;
   process.on("uncaughtException", function(e) {
     try {
       console.log("kick-tizenbrew service: " + (e && e.stack ? e.stack : e));
