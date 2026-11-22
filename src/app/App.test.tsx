@@ -914,6 +914,21 @@ describe('Search', () => {
     expect(root.textContent).not.toContain('No results');
   });
 
+  it('does not search below 3 letters, which Kick rejects, and says so', async () => {
+    const asked: string[] = [];
+    await openSearch({ search: async (w) => (asked.push(w), { channels: [], categories: [] }) });
+    type('x');
+    await wait(450);
+    type('x q');
+    await wait(450);
+    expect(asked).toEqual([]);
+    expect(root.textContent).toContain('Type at least 3 letters');
+    expect(document.activeElement).toBe(input());
+    type('x qc');
+    await wait(450);
+    expect(asked).toEqual(['x qc']);
+  });
+
   it('shows a message when nothing matches', async () => {
     await openSearch({});
     type('zzzz');
@@ -990,7 +1005,7 @@ describe('Search', () => {
           categories: [category('slots', { parentSlug: 'gambling', tags: ['Gambling'] }), category('fortnite')],
         }),
       });
-      type('s');
+      type('slo');
       await wait(400);
       await until(() => root.querySelectorAll('.category-tile').length === 1);
       expect(root.textContent).toContain('Cat fortnite');
@@ -1031,7 +1046,7 @@ describe('Search', () => {
 
   it('leaves the input for the results on the TV keyboard Done key', async () => {
     await openSearch({ search: async () => ({ channels: [channel('a')], categories: [] }) });
-    type('a');
+    type('abc');
     await wait(400);
     await until(() => root.querySelectorAll('.channel-tile').length === 1);
     input().dispatchEvent(new KeyboardEvent('keydown', { keyCode: 65376, bubbles: true }));
@@ -1048,7 +1063,7 @@ describe('Search', () => {
         return { channels: [channel('a')], categories: [] };
       },
     });
-    type('a');
+    type('abc');
     await wait(400);
     await until(() => focusedText() === 'Retry');
     press('Enter');

@@ -12,12 +12,16 @@ import { isHiddenLivestream, visibleCategories } from '../filter/contentFilter';
 /** The search runs this long after the last key press. There is no confirm step. */
 export const SEARCH_DELAY_MS = 400;
 
+/** Kick answers 400 ("Please enter at least 3 characters") below this many letters, spaces not counted. */
+export const SEARCH_MIN_CHARS = 3;
+
 /** Samsung on screen keyboard keys. They are not registered keys, so the App never maps them. */
 const IME_DONE = 65376;
 const IME_CANCEL = 65385;
 
 type State =
   | { status: 'idle' }
+  | { status: 'short' }
   | { status: 'loading'; word: string }
   | { status: 'error'; word: string }
   | { status: 'ready'; word: string; results: SearchResults };
@@ -67,6 +71,13 @@ export function SearchScreen() {
       debounce.cancel();
       run.current++;
       setState({ status: 'idle' });
+      return;
+    }
+    if (word.replace(/\s/g, '').length < SEARCH_MIN_CHARS) {
+      // The TV keyboard types one letter at a time: do not send Kick a word it rejects.
+      debounce.cancel();
+      run.current++;
+      setState({ status: 'short' });
       return;
     }
     debounce.call(word);
@@ -136,6 +147,7 @@ export function SearchScreen() {
         onClick={(e) => (e.currentTarget as HTMLInputElement).focus()}
       />
       <div class="search-results" ref={resultsRef}>
+        {state.status === 'short' ? <p class="status">{t('search.minLength', { count: SEARCH_MIN_CHARS })}</p> : null}
         {state.status === 'loading' ? <p class="status">{t('loading')}</p> : null}
         {state.status === 'ready' ? <Results word={state.word} results={state.results} onChannel={openChannel} /> : null}
       </div>
