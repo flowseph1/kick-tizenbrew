@@ -49,6 +49,12 @@ const playback: PlaybackDeps = {
       return r.text();
     }),
   createSocket: (url) => new WebSocket(url) as unknown as ChatSocket,
+  describe: () => {
+    const v = tizenVersion(navigator.userAgent);
+    return (
+      'engine ' + engine + ', tizen ' + (v ? v.major + '.' + v.minor : 'none') + ', page ' + location.origin
+    );
+  },
 };
 
 render(

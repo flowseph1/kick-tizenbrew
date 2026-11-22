@@ -164,7 +164,12 @@ export function Playback({ slug }: { slug: string }) {
     }
   });
 
-  if (state.status === 'error') return <ErrorScreen onRetry={() => session.start()} />;
+  if (state.status === 'error') {
+    const detail = [session.failure(), app.playback.describe ? app.playback.describe() : '']
+      .filter(Boolean)
+      .join(' | ');
+    return <ErrorScreen onRetry={() => session.start()} detail={detail} />;
+  }
 
   let message: string | null = null;
   if (state.status === 'loading') message = t('loading');

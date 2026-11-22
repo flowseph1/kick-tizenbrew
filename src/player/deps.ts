@@ -11,4 +11,6 @@ export interface PlaybackDeps {
   fetchText: (url: string) => Promise<string>;
   /** Opens a WebSocket (the Chat Overlay's Kick chat connection). */
   createSocket: SocketFactory;
+  /** Platform facts for the playback error screen: engine, Tizen version, page origin. */
+  describe?: () => string;
 }

@@ -53,6 +53,13 @@ export interface PlaybackSession {
   setQuality(quality: Quality | null): void;
   /** Chat reported the Livestream end (`StopStreamBroadcast`): the same "ended" path as the player end. */
   livestreamEnded(): void;
+  /** Why the session went to "error": the engine, the step that failed and its message. Null otherwise. */
+  failure(): string | null;
+}
+
+function describe(e: unknown): string {
+  if (e instanceof Error) return e.message || e.name;
+  return String(e);
 }
 
 export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
@@ -68,6 +75,8 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
   let endedTimer: ReturnType<typeof setTimeout> | undefined;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
   let deadline: ReturnType<typeof setTimeout> | undefined;
+  /** The last failure: shown on the error screen so a TV test can report the cause. */
+  let lastFailure: string | null = null;
 
   function set(s: SessionStatus) {
     status = s;
@@ -103,7 +112,8 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
     endedTimer = setTimeout(() => opts.onDone(), ENDED_MS);
   }
 
-  function fail() {
+  function fail(reason?: string) {
+    if (reason) lastFailure = reason;
     clearTimers();
     closePlayer();
     set('error');
@@ -111,7 +121,13 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
 
   /** Fetches the Channel (fresh token) and opens it. Rejects on any failure. */
   async function openFresh(id: number): Promise<void> {
-    const ch = await opts.api.channel(opts.slug);
+    let ch: ChannelDetail;
+    try {
+      ch = await opts.api.channel(opts.slug);
+    } catch (e) {
+      lastFailure = 'channel: ' + describe(e);
+      throw e;
+    }
     if (id !== run) return;
     channel = ch;
     if (!ch.livestream || !ch.playbackUrl) {
@@ -124,10 +140,11 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
       proxyOk = await opts.proxyReady();
       if (id !== run) return;
       if (!proxyOk) {
-        fail();
+        fail('proxy: no answer from ' + PROXY_BASE + '/ping');
         return;
       }
     }
+    lastFailure = null;
     player.open(url);
     // The master opens at Auto: re-apply a chosen Quality. A player that cannot switch in place
     // (AVPlay) stays on the master, so the Quality returns to Auto.
@@ -160,9 +177,10 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
     } else if (e.type === 'ended') {
       ended();
     } else {
+      lastFailure = 'player ' + (current ? current.engine : '') + ': ' + e.detail;
       if (status !== 'reconnecting') {
         set('reconnecting');
-        deadline = setTimeout(fail, RECONNECT_MS);
+        deadline = setTimeout(() => fail(), RECONNECT_MS);
       }
       scheduleRetry();
     }
@@ -175,9 +193,10 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
       clearTimers();
       closePlayer();
       chosen = null;
+      lastFailure = null;
       set('loading');
-      openFresh(id).catch(() => {
-        if (id === run) fail();
+      openFresh(id).catch((e) => {
+        if (id === run) fail(lastFailure ? undefined : 'open: ' + describe(e));
       });
     },
     play() {
@@ -210,6 +229,7 @@ export function createPlaybackSession(opts: SessionOptions): PlaybackSession {
       return parseQualities(await opts.fetchText(masterTextUrl(ch.playbackUrl)));
     },
     quality: () => chosen,
+    failure: () => (status === 'error' ? lastFailure || 'unknown' : null),
     livestreamEnded() {
       if (stopped || status === 'ended' || status === 'error') return;
       run++;

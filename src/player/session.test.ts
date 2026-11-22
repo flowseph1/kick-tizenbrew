@@ -210,6 +210,7 @@ describe('PlaybackSession', () => {
     expect(last().status).toBe('reconnecting');
     await vi.advanceTimersByTimeAsync(100);
     expect(last().status).toBe('error');
+    expect(session.failure()).toBe('channel: offline');
     expect(player.closed).toBe(true);
     expect(done).not.toHaveBeenCalled();
   });
@@ -224,6 +225,7 @@ describe('PlaybackSession', () => {
       if (last().status === 'reconnecting') player.emit({ type: 'error', detail: 'network' });
     }
     expect(last().status).toBe('error');
+    expect(session.failure()).toBe('player hlsjs: network');
     expect(player.opened.length).toBeGreaterThan(2);
   });
 
@@ -278,8 +280,10 @@ describe('PlaybackSession', () => {
     session.start();
     await vi.advanceTimersByTimeAsync(0);
     expect(last().status).toBe('error');
+    expect(session.failure()).toBe('channel: blocked');
 
     session.start();
+    expect(session.failure()).toBeNull();
     await vi.advanceTimersByTimeAsync(0);
     expect(player.opened).toHaveLength(1);
   });
@@ -289,6 +293,7 @@ describe('PlaybackSession', () => {
     session.start();
     await vi.advanceTimersByTimeAsync(0);
     expect(last().status).toBe('error');
+    expect(session.failure()).toBe('proxy: no answer from ' + PROXY_BASE + '/ping');
   });
 });
 
